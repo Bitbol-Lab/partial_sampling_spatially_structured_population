@@ -6,8 +6,9 @@ from scipy.special import comb
 import random as rd
 import matplotlib.pyplot as plt
 
-from time import sleep
 from tqdm import tqdm
+
+import json
 
 
 # useful functions
@@ -79,8 +80,8 @@ def phi(N,s,rho,x):
 N = 1000
 s_range = np.logspace(-4, -1, num=10)
 tmax = 15000
-nb_trajectories=10**7
-#nb_trajectories = 1000
+#nb_trajectories=10**7
+nb_trajectories = 100
 
 
 Ms = np.array([1, N//4, N//2, 3*N//4, N])
@@ -115,4 +116,14 @@ ax.set_yscale("log")
 ax.set_xlabel('Relative fitness')
 ax.set_ylabel('Fixation probability')
 ax.legend()
-plt.savefig(f'well-mixed_phi-vs-s_n-traj={nb_trajectories}.png')
+plt.savefig(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}.png')
+
+simulation_parameters = {
+    'N':N,
+    'tmax':tmax,
+    'nb_trajectories':nb_trajectories,
+    's_range': (min(s_range),max(s_range))
+}
+
+with open(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
+    json.dump(simulation_parameters, outfile, indent=4)
