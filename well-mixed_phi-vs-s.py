@@ -10,10 +10,12 @@ from tqdm import tqdm
 
 import json
 
+from numba import njit, jit
+
 
 # useful functions
 
-
+@jit(nopython=True)
 def simulate_trajectory(N, M, s, tmax, initial_state=1):
     states = np.zeros(tmax)
     states[0] = initial_state
@@ -42,6 +44,7 @@ def simulate_trajectory(N, M, s, tmax, initial_state=1):
     fixation = current_state == N
     return states, fixation
 
+@jit(parallel=True)
 def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_state=1):
     all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
     all_trajectories[:,0] = initial_state
@@ -51,8 +54,11 @@ def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_s
     count_fixation = 0
 
 
+    #for trajectory_index in tqdm(range(nb_trajectories)):
     for trajectory_index in tqdm(range(nb_trajectories)):
-        #print('trajectory:', trajectory_index)
+        if trajectory_index%(10**3) == 0:
+            #print('trajectory:', trajectory_index)
+            a= 1
         states, fixation = simulate_trajectory(N,M,s,tmax,initial_state)
 
         count_fixation += fixation
@@ -66,7 +72,7 @@ def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_s
     return all_trajectories, count_fixation, fixation_seq
 
 
-
+@njit
 def phi(N,s,rho,x):
     num = 1 - np.exp(-2*N*s*x / (2-rho))
     denom = 1 - np.exp(-2*N*s / (2-rho))
@@ -76,54 +82,65 @@ def phi(N,s,rho,x):
 
 
 # generating the graph
+@jit(parallel=True)
+def run(nb_trajectories):
 
-N = 1000
-s_range = np.logspace(-4, -1, num=10)
-tmax = 15000
-#nb_trajectories=10**7
-nb_trajectories = 100
-
-
-Ms = np.array([1, N//4, N//2, 3*N//4, N])
-rhos = Ms* 1. /N
-
-cmap = mpl.colormaps['plasma']
-colors = cmap(np.linspace(0, 1, len(Ms)))
-
-fig, ax = plt.subplots()
+    N = 1000
+    s_range = np.logspace(-4, -1, num=10)
+    tmax = 10000
+    
 
 
+    Ms = np.array([1, N//4, N//2, 3*N//4, N])
+    rhos = Ms* 1. /N
 
-for i,M in enumerate(Ms):
-    print('M:',M)
-    fixation_freqs = []
-    fixation_err = []
-    color = colors[i]
-    for s in s_range:
-        print('s:',s)
-        _, count_fixation, fixation_seq = simulate_multiple_trajectories(N,M,s,tmax, nb_trajectories)
-        fixation_freq = count_fixation / nb_trajectories
-        fixation_freqs.append(fixation_freq)
-        std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
-        fixation_err.append(2* std)
-    ax.errorbar(s_range, fixation_freqs, yerr= fixation_err, fmt = 'o', alpha=0.5, color=color)
-    ax.plot(s_range, [phi(N,s,M/N,1/N) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
+    cmap = mpl.colormaps['plasma']
+    colors = cmap(np.linspace(0, 1, len(Ms)))
+
+    fig, ax = plt.subplots()
 
 
 
-ax.set_xscale("log")
-ax.set_yscale("log")
-ax.set_xlabel('Relative fitness')
-ax.set_ylabel('Fixation probability')
-ax.legend()
-plt.savefig(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}.png')
+    for i,M in enumerate(Ms):
+        print('M:',M)
+        fixation_freqs = []
+        fixation_err = []
+        color = colors[i]
+        for s in s_range:
+            print('s:',s)
+            _, count_fixation, fixation_seq = simulate_multiple_trajectories(N,M,s,tmax, nb_trajectories)
+            fixation_freq = count_fixation / nb_trajectories
+            fixation_freqs.append(fixation_freq)
+            std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
+            fixation_err.append(2* std)
+        ax.errorbar(s_range, fixation_freqs, yerr= fixation_err, fmt = 'o', alpha=0.5, color=color)
+        ax.plot(s_range, [phi(N,s,M/N,1/N) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
 
-simulation_parameters = {
-    'N':N,
-    'tmax':tmax,
-    'nb_trajectories':nb_trajectories,
-    's_range': (min(s_range),max(s_range))
-}
 
-with open(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
-    json.dump(simulation_parameters, outfile, indent=4)
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel('Relative fitness')
+    ax.set_ylabel('Fixation probability')
+    ax.legend()
+    plt.savefig(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}.png')
+
+    simulation_parameters = {
+        'N':N,
+        'tmax':tmax,
+        'nb_trajectories':nb_trajectories,
+        's_range': (min(s_range),max(s_range))
+    }
+    return simulation_parameters
+
+    
+
+if __name__ == "__main__":
+
+    #nb_trajectories=10**7
+    nb_trajectories = 10**5
+
+    simulation_parameters = run(nb_trajectories)
+
+    with open(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
+        json.dump(simulation_parameters, outfile, indent=4)

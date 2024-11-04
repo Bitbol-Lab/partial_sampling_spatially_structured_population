@@ -11,10 +11,12 @@ from tqdm import tqdm
 
 import json
 
+from numba import njit, jit
+
 
 # useful functions
 
-
+@jit
 def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
     assert 1 - (nb_colonies-1)*migration_rate >= 0
 
@@ -81,6 +83,10 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 
     return trajectories, fixation
 
+
+
+
+@jit
 def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories=100):
     all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
 
@@ -104,22 +110,21 @@ def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, 
     return all_trajectories, count_fixation, fixation_seq
 
 
-
+@jit
 def phi(N,s,rho,x):
     num = 1 - np.exp(-2*N*s*x / (2-rho))
     denom = 1 - np.exp(-2*N*s / (2-rho))
     return num/denom
 
 
-if __name__ == "__main__":
+# generating the graph
 
-    # generating the graph
-
+@jit
+def run(nb_trajectories):
     N = 10
     s_range = np.logspace(-4, -1, num=10)
     tmax = 50000
-    #nb_trajectories=10**7
-    nb_trajectories = 50
+    
     nb_colonies = 3
     migration_rate = 0.1
 
@@ -171,6 +176,15 @@ if __name__ == "__main__":
         'nb_trajectories':nb_trajectories,
         's_range':(min(s_range), max(s_range))
     }
+    return simulation_parameters
+
+
+if __name__ == "__main__":
+    #nb_trajectories=10**7
+    nb_trajectories = 100
+
+    simulation_parameters = run(nb_trajectories)
+
 
     with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
         json.dump(simulation_parameters, outfile, indent=4)

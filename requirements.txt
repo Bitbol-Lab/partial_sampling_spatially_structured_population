@@ -10,3 +10,5 @@ scipy
 networkx
 
 tqdm
+
+numba
