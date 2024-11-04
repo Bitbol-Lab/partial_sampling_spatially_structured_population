@@ -16,6 +16,7 @@ from numba import njit, jit
 
 # useful functions
 
+
 def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
     assert 1 - (nb_colonies-1)*migration_rate >= 0
 
@@ -32,22 +33,22 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 
 
     # creating a directed graph
-    DG = nx.DiGraph()
-    DG.add_nodes_from(list(range(nb_colonies)))
+    DG = np.zeros((nb_colonies, nb_colonies), dtype=float)
+    DG_nodes = np.arange(nb_colonies)
 
 
     #adding weighted edges
-    for node1 in DG.nodes:
-        for node2 in DG.nodes:
+    for node1 in DG_nodes:
+        for node2 in DG_nodes:
             if node1==node2:
                 
                 weight = 1 - (nb_colonies-1)*migration_rate
             else:
                 weight = migration_rate
-            DG.add_weighted_edges_from([(node1, node2, weight)])
+            DG[node1, node2] = weight
 
 
-    trajectories = np.zeros((tmax,nb_colonies))
+    trajectories = np.zeros((tmax,nb_colonies), dtype=int)
     trajectories[0,:] = i_nodes
 
     while t<tmax and b :
@@ -60,7 +61,8 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
         nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M_nodes[selected_node])
 
         # perform binomial sampling 
-        x_tilde = sum([DG.edges[node, selected_node]['weight']*i_nodes[node]/N_nodes[node]  for node in list(DG.predecessors(selected_node))])
+        x_vector = np.divide(i_nodes, N_nodes, dtype=float)
+        x_tilde = np.inner(x_vector, DG[:,selected_node])
         prob = x_tilde * (1+s) / (1 + x_tilde*s)
         n_trials = M_nodes[selected_node]
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
@@ -84,7 +86,6 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 
 
 
-
 def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories=100):
     all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
 
@@ -93,8 +94,8 @@ def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, 
     count_fixation = 0
 
 
-    for trajectory_index in tqdm(range(nb_trajectories)):
-        #print('trajectory:', trajectory_index)
+    for trajectory_index in range(nb_trajectories):
+        print('trajectory:', trajectory_index)
         trajectories, fixation = simulate_clique(N, M, nb_colonies, migration_rate, s, tmax)
 
         count_fixation += fixation
