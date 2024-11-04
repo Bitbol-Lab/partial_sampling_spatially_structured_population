@@ -1,0 +1,18 @@
+{
+    "N_tot": 100,
+    "N": 20,
+    "number of colonies": 5,
+    "type_graph": "star",
+    "migration rate": 0.01,
+    "alpha_range": [
+        0.1,
+        10.0
+    ],
+    "initial_node": 0,
+    "tmax": 10000,
+    "nb_trajectories": 100,
+    "s_range": [
+        0.0001,
+        0.1
+    ]
+}

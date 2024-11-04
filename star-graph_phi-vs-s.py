@@ -16,8 +16,9 @@ from numba import njit, jit
 
 # useful functions
 
-def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
-    assert 1 - (nb_colonies-1)*migration_rate >= 0
+def simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tmax):
+    assert 1 - (nb_colonies-1)*alpha*migration_rate >= 0
+    assert 1 - migration_rate >= 0
 
 
     b = True
@@ -25,7 +26,7 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 
 
     i_nodes = np.zeros(nb_colonies, dtype=int) # list of the number of mutants in each node
-    i_nodes[0] = 1
+    i_nodes[initial_node] = 1
     # i_nodes[np.random.choice(nb_colonies)] = 1 # for a random starting mutant
     N_nodes = N * np.ones(nb_colonies, dtype=int) # list of the population size in each node
     M_nodes = M * np.ones(nb_colonies, dtype=int) # list of the update size in each node
@@ -36,15 +37,21 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
     DG.add_nodes_from(list(range(nb_colonies)))
 
 
-    #adding weighted edges
-    for node1 in DG.nodes:
-        for node2 in DG.nodes:
-            if node1==node2:
-                
-                weight = 1 - (nb_colonies-1)*migration_rate
-            else:
-                weight = migration_rate
-            DG.add_weighted_edges_from([(node1, node2, weight)])
+    #adding weighted edges for the center of the star
+
+
+    for node in range(1,nb_colonies):
+        # outward edges
+        DG.add_weighted_edges_from([(0, node, migration_rate)])
+
+        # inward edges
+        DG.add_weighted_edges_from([(node, 0, alpha*migration_rate)])
+
+        # loops
+        DG.add_weighted_edges_from([(node, node, 1 - migration_rate)])
+    
+    DG.add_weighted_edges_from([(0, 0, 1 -(nb_colonies - 1)*alpha*migration_rate)])
+
 
 
     trajectories = np.zeros((tmax,nb_colonies))
@@ -85,7 +92,7 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 
 
 
-def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories=100):
+def simulate_multiple_trajectories_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tmax, nb_trajectories=100):
     all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
 
     fixation_seq = np.zeros(nb_trajectories, dtype=bool)
@@ -95,7 +102,7 @@ def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, 
 
     for trajectory_index in tqdm(range(nb_trajectories)):
         #print('trajectory:', trajectory_index)
-        trajectories, fixation = simulate_clique(N, M, nb_colonies, migration_rate, s, tmax)
+        trajectories, fixation = simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tmax)
 
         count_fixation += fixation
 
@@ -117,19 +124,26 @@ def phi(N,s,rho,x):
 # generating the graph
 
 def run(nb_trajectories):
-    N = 10
-    s_range = np.logspace(-4, -1, num=10)
-    tmax = 50000
+
+    initial_node = 0
     
-    nb_colonies = 3
-    migration_rate = 0.1
+
+    N = 20
+    s_range = np.logspace(-4, -1, num=10)
+    tmax = 10000
+    
+    nb_colonies = 5
+    migration_rate = 0.01
+    alphas = np.logspace(-1, 1, num=5)
 
 
-    Ms = np.array([1, N//4, N//2, 3*N//4, N])
-    rhos = Ms* 1. /N
+    #Ms = np.array([1, N//4, N//2, 3*N//4, N])
+    #rhos = Ms* 1. /N
+
+    M = N # WF case
 
     cmap = mpl.colormaps['plasma']
-    colors = cmap(np.linspace(0, 1, len(Ms)))
+    colors = cmap(np.linspace(0, 1, len(alphas)))
 
     fig, ax = plt.subplots()
 
@@ -137,19 +151,20 @@ def run(nb_trajectories):
 
 
 
-    for i,M in enumerate(Ms):
-        print('M:',M)
+    for i,alpha in enumerate(alphas):
+        print('alpha:',alpha)
         fixation_freqs = []
         fixation_err = []
         color = colors[i]
         for s in s_range:
             print('s:',s)
-            _, count_fixation, fixation_seq = simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories)
+            
+            _, count_fixation, fixation_seq = simulate_multiple_trajectories_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tmax, nb_trajectories)
             fixation_freq = count_fixation / nb_trajectories
             fixation_freqs.append(fixation_freq)
             std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
             fixation_err.append(2* std)
-        ax.errorbar(s_range, fixation_freqs, yerr= fixation_err, fmt = 'o', label = f"M={M} (update fraction: {round(M/N,2)} )", alpha=0.5, color=color)
+        ax.errorbar(s_range, fixation_freqs, yerr= fixation_err, fmt = 'o', label = f"migration assymmetry={alpha}", alpha=0.5, color=color)
         #ax.plot(s_range, [phi(N_tot,s,M/N,1/N_tot) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
 
 
@@ -159,15 +174,19 @@ def run(nb_trajectories):
     ax.set_xlabel('Relative fitness')
     ax.set_ylabel('Fixation probability')
     ax.legend()
-    plt.savefig(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}.png')
+    plt.savefig(f'star_results/star-graph_phi-vs-s_n-traj={nb_trajectories}.png')
 
 
 
     simulation_parameters = {
         'N_tot': N_tot,
         'N':N,
-        'number of colonies':nb_colonies,
+        'M':M,
+        'number of demes':nb_colonies,
+        'type_graph': 'star',
         'migration rate': migration_rate,
+        'alpha_range': (min(alphas), max(alphas)),
+        'initial_node': initial_node,
         'tmax':tmax,
         'nb_trajectories':nb_trajectories,
         's_range':(min(s_range), max(s_range))
@@ -177,10 +196,10 @@ def run(nb_trajectories):
 
 if __name__ == "__main__":
     #nb_trajectories=10**7
-    nb_trajectories = 100
+    nb_trajectories = 1000
 
     simulation_parameters = run(nb_trajectories)
 
 
-    with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
+    with open(f'star_results/star-graph_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
         json.dump(simulation_parameters, outfile, indent=4)
