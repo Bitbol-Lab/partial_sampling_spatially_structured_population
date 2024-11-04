@@ -86,7 +86,7 @@ def phi(N,s,rho,x):
 def run(nb_trajectories):
 
     N = 1000
-    s_range = np.logspace(-4, -1, num=10)
+    s_range = np.logspace(-5, -1, num=10)
     tmax = 10000
     
 
@@ -138,7 +138,7 @@ def run(nb_trajectories):
 if __name__ == "__main__":
 
     #nb_trajectories=10**7
-    nb_trajectories = 10**5
+    nb_trajectories = 10**6
 
     simulation_parameters = run(nb_trajectories)
 

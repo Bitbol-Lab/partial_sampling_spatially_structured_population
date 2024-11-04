@@ -88,7 +88,7 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories=100):
     all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
 
-    fixation_seq = np.zeros(nb_trajectories, dtype=bool)
+    fixation_seq = np.zeros(nb_trajectories, dtype=int)
 
     count_fixation = 0
 
@@ -144,7 +144,7 @@ def run(nb_trajectories):
         color = colors[i]
         for s in s_range:
             print('s:',s)
-            _, count_fixation, fixation_seq = simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories)
+            _, count_fixation, _ = simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories)
             fixation_freq = count_fixation / nb_trajectories
             fixation_freqs.append(fixation_freq)
             std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
