@@ -4,9 +4,9 @@ import matplotlib as mpl
 import numpy as np
 import random as rd
 import matplotlib.pyplot as plt
-import networkx as nx
 
-from time import sleep
+import pandas as pd
+
 from tqdm import tqdm
 
 import json
@@ -134,23 +134,30 @@ def run(nb_trajectories):
 
     fig, ax = plt.subplots()
 
+    fig_data = np.zeros((5, len(Ms)*len(s_range)))
+
     N_tot = N*nb_colonies
 
 
 
     for i,M in enumerate(Ms):
         print('M:',M)
-        fixation_freqs = []
-        fixation_err = []
+        fig_data[0, i*len(s_range):(i+1)*len(s_range)] = M*np.ones(len(s_range))
+
         color = colors[i]
-        for s in s_range:
+
+        for j,s in enumerate(s_range):
             print('s:',s)
+
             _, count_fixation, _ = simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories)
             fixation_freq = count_fixation / nb_trajectories
-            fixation_freqs.append(fixation_freq)
             std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
-            fixation_err.append(2* std)
-        ax.errorbar(s_range, fixation_freqs, yerr= fixation_err, fmt = 'o', label = f"M={M} (update fraction: {round(M/N,2)} )", alpha=0.5, color=color)
+            
+            fig_data[1, i*len(s_range) + j] = s
+            fig_data[2, i*len(s_range) + j] = fixation_freq
+            fig_data[3, i*len(s_range) + j] = 2*std
+            fig_data[4, i*len(s_range) + j] = count_fixation
+        ax.errorbar(s_range, fig_data[2,i*len(s_range):(i+1)*len(s_range)], yerr= fig_data[3,i*len(s_range):(i+1)*len(s_range)], fmt = 'o', alpha=0.5, color=color)
         #ax.plot(s_range, [phi(N_tot,s,M/N,1/N_tot) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
 
 
@@ -173,14 +180,25 @@ def run(nb_trajectories):
         'nb_trajectories':nb_trajectories,
         's_range':(min(s_range), max(s_range))
     }
-    return simulation_parameters
+    return simulation_parameters, fig_data
 
 
 if __name__ == "__main__":
     #nb_trajectories=10**7
-    nb_trajectories = 100
+    nb_trajectories = 20
 
-    simulation_parameters = run(nb_trajectories)
+    simulation_parameters, fig_data = run(nb_trajectories)
+
+    df = pd.DataFrame({
+        'M': fig_data[0,:],
+        's': fig_data[1,:],
+        'fixation_freq': fig_data[2,:],
+        'fixation_err': fig_data[3,:],
+        'count_fixation': fig_data[4,:]
+    })
+
+    df.to_csv(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_figdata.csv')
+
 
 
     with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:

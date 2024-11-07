@@ -5,6 +5,8 @@ import numpy as np
 import random as rd
 import matplotlib.pyplot as plt
 
+import pandas as pd
+
 from tqdm import tqdm
 
 import json
@@ -98,23 +100,32 @@ def run(nb_trajectories):
 
     fig, ax = plt.subplots()
 
+    fig_data = np.zeros((5, len(Ms)*len(s_range)))
+
 
 
     for i,M in enumerate(Ms):
         print('M:',M)
-        fixation_freqs = []
-        fixation_err = []
+        fig_data[0, i*len(s_range):(i+1)*len(s_range)] = M*np.ones(len(s_range))
+
         color = colors[i]
-        for s in s_range:
+        for j,s in enumerate(s_range):
             print('s:',s)
-            _, count_fixation, fixation_seq = simulate_multiple_trajectories(N,M,s,tmax, nb_trajectories)
+            
+            _, count_fixation, _ = simulate_multiple_trajectories(N,M,s,tmax, nb_trajectories)
+            
             fixation_freq = count_fixation / nb_trajectories
-            fixation_freqs.append(fixation_freq)
             std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
-            fixation_err.append(2* std)
-        ax.errorbar(s_range, fixation_freqs, yerr= fixation_err, fmt = 'o', alpha=0.5, color=color)
+            
+            fig_data[1, i*len(s_range) + j] = s
+            fig_data[2, i*len(s_range) + j] = fixation_freq
+            fig_data[3, i*len(s_range) + j] = 2*std
+            fig_data[4, i*len(s_range) + j] = count_fixation
+        ax.errorbar(s_range, fig_data[2,i*len(s_range):(i+1)*len(s_range)], yerr= fig_data[3,i*len(s_range):(i+1)*len(s_range)], fmt = 'o', alpha=0.5, color=color)
         ax.plot(s_range, [phi(N,s,M/N,1/N) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
 
+
+    
 
 
     ax.set_xscale("log")
@@ -130,16 +141,26 @@ def run(nb_trajectories):
         'nb_trajectories':nb_trajectories,
         's_range': (min(s_range),max(s_range))
     }
-    return simulation_parameters
+    return simulation_parameters, fig_data
 
     
 
 if __name__ == "__main__":
 
     #nb_trajectories=10**7
-    nb_trajectories = 10**6
+    nb_trajectories = 400
 
-    simulation_parameters = run(nb_trajectories)
+    simulation_parameters, fig_data = run(nb_trajectories)
+
+    df = pd.DataFrame({
+        'M': fig_data[0,:],
+        's': fig_data[1,:],
+        'fixation_freq': fig_data[2,:],
+        'fixation_err': fig_data[3,:],
+        'count_fixation': fig_data[5,:]
+    })
+
+    df.to_csv(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_figdata.csv')
 
     with open(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
         json.dump(simulation_parameters, outfile, indent=4)
