@@ -2,7 +2,6 @@
 
 import matplotlib as mpl
 import numpy as np
-from scipy.special import comb
 import random as rd
 import matplotlib.pyplot as plt
 

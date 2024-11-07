@@ -4,7 +4,6 @@ import matplotlib as mpl
 import numpy as np
 import random as rd
 import matplotlib.pyplot as plt
-import networkx as nx
 
 from time import sleep
 from tqdm import tqdm
@@ -33,8 +32,8 @@ def simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tma
 
 
     # creating a directed graph
-    DG = nx.DiGraph()
-    DG.add_nodes_from(list(range(nb_colonies)))
+    DG = np.zeros((nb_colonies, nb_colonies), dtype=float)
+    #DG_nodes = np.arange(nb_colonies)
 
 
     #adding weighted edges for the center of the star
@@ -42,15 +41,15 @@ def simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tma
 
     for node in range(1,nb_colonies):
         # outward edges
-        DG.add_weighted_edges_from([(0, node, migration_rate)])
+        DG[0, node]= migration_rate
 
         # inward edges
-        DG.add_weighted_edges_from([(node, 0, alpha*migration_rate)])
+        DG[node, 0] = alpha*migration_rate
 
         # loops
-        DG.add_weighted_edges_from([(node, node, 1 - migration_rate)])
+        DG[node, node] = 1 - migration_rate
     
-    DG.add_weighted_edges_from([(0, 0, 1 -(nb_colonies - 1)*alpha*migration_rate)])
+    DG[0, 0] = 1 -(nb_colonies - 1)*alpha*migration_rate
 
 
 
@@ -67,7 +66,8 @@ def simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tma
         nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M_nodes[selected_node])
 
         # perform binomial sampling 
-        x_tilde = sum([DG.edges[node, selected_node]['weight']*i_nodes[node]/N_nodes[node]  for node in list(DG.predecessors(selected_node))])
+        x_vector = np.divide(i_nodes, N_nodes, dtype=float)
+        x_tilde = np.inner(x_vector, DG[:,selected_node])
         prob = x_tilde * (1+s) / (1 + x_tilde*s)
         n_trials = M_nodes[selected_node]
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
