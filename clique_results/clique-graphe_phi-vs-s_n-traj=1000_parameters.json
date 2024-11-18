@@ -1,0 +1,12 @@
+{
+    "N_tot": 300,
+    "N": 100,
+    "number of colonies": 3,
+    "migration rate": 0.1,
+    "tmax": 50000,
+    "nb_trajectories": 1000,
+    "s_range": [
+        0.0001,
+        0.1
+    ]
+}
