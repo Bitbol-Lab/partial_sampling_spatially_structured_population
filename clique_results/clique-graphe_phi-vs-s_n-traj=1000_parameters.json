@@ -1,7 +1,7 @@
 {
-    "N_tot": 300,
-    "N": 100,
-    "number of colonies": 3,
+    "N_tot": 100,
+    "N": 10,
+    "number of colonies": 10,
     "migration rate": 0.1,
     "tmax": 50000,
     "nb_trajectories": 1000,

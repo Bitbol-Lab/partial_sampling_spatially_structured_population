@@ -44,7 +44,7 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
 
     while t < tmax and b:
         # Choose a random node
-        selected_node = np.random.randint(0, nb_colonies - 1)
+        selected_node = np.random.randint(0, nb_colonies) #!!!!
 
         # Hypergeometrical sampling
         ngood = i_nodes[selected_node]
@@ -52,8 +52,8 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
         nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M)
 
         # Binomial sampling
-        x_tilde = sum([float_(i_nodes[k]) * DG[k, selected_node]/N for k in range(nb_colonies)])
-        print('x_tilde:', x_tilde)
+        x_tilde = sum([i_nodes[k] * DG[k, selected_node]/N for k in range(nb_colonies)])
+        #print('x_tilde:', x_tilde)
         prob = x_tilde * (1 + s) / (1 + x_tilde * s)
         n_trials = M
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
@@ -84,8 +84,7 @@ def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, 
     #fixation_seq = np.zeros(nb_trajectories)
     count_fixation = 0
 
-    # Parallélisation de la boucle sur les trajectoires
-    for trajectory_index in prange(nb_trajectories):
+    for trajectory_index in prange(nb_trajectories):  #parallelized
         #print('trajectory:', trajectory_index)
         fixation = simulate_clique(N, M, nb_colonies, migration_rate, s, tmax)
 
@@ -104,11 +103,11 @@ def phi(N,s,rho,x):
 # generating the graph
 
 def run(nb_trajectories, plot=True):
-    N = 100
+    N = 10
     s_range = np.logspace(-4, -1, num=10)
     tmax = 50000
     
-    nb_colonies = 3
+    nb_colonies = 10
     migration_rate = 0.1
 
 
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     #run(10, plot=False) #compiling the function
 
     
-    nb_trajectories = 10**3
+    nb_trajectories = 5*10000
     
     start_time = time.time()
 
@@ -184,7 +183,7 @@ if __name__ == "__main__":
     end_time = time.time()
     execution_time = end_time - start_time
 
-    print('Execution time 1', execution_time)
+    print('Execution time:', execution_time)
 
     df = pd.DataFrame({
         'M': fig_data[0,:],

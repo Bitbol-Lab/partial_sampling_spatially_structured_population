@@ -11,7 +11,6 @@ from tqdm import tqdm
 
 import json
 
-from numba import njit, jit
 
 import time
 
@@ -188,7 +187,7 @@ def run(nb_trajectories):
 if __name__ == "__main__":
     #nb_trajectories=10**7
 
-    nb_trajectories = 1000
+    nb_trajectories = 100
     
     start_time = time.time()
 
