@@ -2,7 +2,6 @@
 
 import matplotlib as mpl
 import numpy as np
-import random as rd
 import matplotlib.pyplot as plt
 
 import pandas as pd
@@ -11,103 +10,89 @@ from tqdm import tqdm
 
 import json
 
-from numba import njit, jit
+from numba import njit, prange, jit, int_, float_
+
+import time
 
 
 # useful functions
 
-
+@jit(int_(int_, int_, int_, float_, float_, int_ ))
 def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
-    assert 1 - (nb_colonies-1)*migration_rate >= 0
-
+    assert 1 - (nb_colonies - 1) * migration_rate >= 0
 
     b = True
     t = 1
 
-
-    i_nodes = np.zeros(nb_colonies, dtype=int) # list of the number of mutants in each node
+    i_nodes = np.zeros(nb_colonies, dtype=int_)  # list of the number of mutants in each node
     i_nodes[0] = 1
-    # i_nodes[np.random.choice(nb_colonies)] = 1 # for a random starting mutant
-    N_nodes = N * np.ones(nb_colonies, dtype=int) # list of the population size in each node
-    M_nodes = M * np.ones(nb_colonies, dtype=int) # list of the update size in each node
+    #N_nodes = N * np.ones(nb_colonies, dtype=int_)  # population size in each node
+    #M_nodes = M * np.ones(nb_colonies, dtype=int_)  # update size in each node
 
-
-    # creating a directed graph
-    DG = np.zeros((nb_colonies, nb_colonies), dtype=float)
-    DG_nodes = np.arange(nb_colonies)
-
-
-    #adding weighted edges
-    for node1 in DG_nodes:
-        for node2 in DG_nodes:
-            if node1==node2:
-                
-                weight = 1 - (nb_colonies-1)*migration_rate
+    # Creating a directed graph (migration rates)
+    DG = np.zeros((nb_colonies, nb_colonies), dtype=float_)
+    for node1 in range(nb_colonies):
+        for node2 in range(nb_colonies):
+            if node1 == node2:
+                weight = 1 - (nb_colonies - 1) * migration_rate
             else:
                 weight = migration_rate
             DG[node1, node2] = weight
 
+    #trajectories = np.zeros((tmax, nb_colonies))
+    #trajectories[0, :] = i_nodes
 
-    trajectories = np.zeros((tmax,nb_colonies), dtype=int)
-    trajectories[0,:] = i_nodes
+    while t < tmax and b:
+        # Choose a random node
+        selected_node = np.random.randint(0, nb_colonies) #!!!!
 
-    while t<tmax and b :
-        #choose randomly one node
-        selected_node = rd.randint(0, nb_colonies-1)
-
-        #perform hypergeometrical sampling
+        # Hypergeometrical sampling
         ngood = i_nodes[selected_node]
-        nbad = N_nodes[selected_node] - ngood
-        nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M_nodes[selected_node])
+        nbad = N - ngood
+        nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M)
 
-        # perform binomial sampling 
-        x_vector = np.divide(i_nodes, N_nodes, dtype=float)
-        x_tilde = np.inner(x_vector, DG[:,selected_node])
-        prob = x_tilde * (1+s) / (1 + x_tilde*s)
-        n_trials = M_nodes[selected_node]
+        # Binomial sampling
+        x_tilde = sum([i_nodes[k] * DG[k, selected_node]/N for k in range(nb_colonies)])
+        #print('x_tilde:', x_tilde)
+        prob = x_tilde * (1 + s) / (1 + x_tilde * s)
+        n_trials = M
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
 
-        # update nb of mutants in the node
+        # Update mutants in the node
         i_nodes[selected_node] = ngood - nb_mutants_before_update + nb_mutants_after_update
 
-        trajectories[t,:] = i_nodes
-
+        #trajectories[t, :] = i_nodes
         t += 1
-        b = sum(i_nodes) < sum(N_nodes) and (i_nodes > 0).any()
+        b = sum(i_nodes) < nb_colonies*N and (i_nodes > 0).any()
 
-    fixation = sum(i_nodes) == sum(N_nodes)
+    if sum(i_nodes) == nb_colonies*N:
+        fixation = 1
+    else:
+        fixation = 0
 
-    if t<tmax:
-            
-        for tt in range(t,tmax):
-            trajectories[tt,:] = trajectories[t-1,:]
+    #if t < tmax:
+        #for tt in range(t, tmax):
+            #trajectories[tt, :] = trajectories[t - 1, :]
 
-    return trajectories, fixation
-
+    return fixation
 
 
+
+@njit(parallel=True)
 def simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories=100):
-    all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
-
-    fixation_seq = np.zeros(nb_trajectories, dtype=int)
-
+    #all_trajectories = np.zeros((int(nb_trajectories), int(tmax)))
+    #fixation_seq = np.zeros(nb_trajectories)
     count_fixation = 0
 
-
-    for trajectory_index in range(nb_trajectories):
-        print('trajectory:', trajectory_index)
-        trajectories, fixation = simulate_clique(N, M, nb_colonies, migration_rate, s, tmax)
+    for trajectory_index in prange(nb_trajectories):  #parallelized
+        #print('trajectory:', trajectory_index)
+        fixation = simulate_clique(N, M, nb_colonies, migration_rate, s, tmax)
 
         count_fixation += fixation
+        #fixation_seq[trajectory_index] = fixation
+        #all_trajectories[trajectory_index, :] = np.sum(trajectories, axis=1)
 
-        fixation_seq[trajectory_index] = fixation
-
-        all_trajectories[trajectory_index,:] = np.sum(trajectories, axis = 1)
-        
-        
-
-    return all_trajectories, count_fixation, fixation_seq
-
+    return count_fixation
 
 def phi(N,s,rho,x):
     num = 1 - np.exp(-2*N*s*x / (2-rho))
@@ -117,12 +102,10 @@ def phi(N,s,rho,x):
 
 # generating the graph
 
-def run(nb_trajectories):
-    N = 10
+def run(nb_trajectories, N, nb_colonies, plot=True):
     s_range = np.logspace(-4, -1, num=10)
     tmax = 50000
     
-    nb_colonies = 3
     migration_rate = 0.1
 
 
@@ -149,7 +132,7 @@ def run(nb_trajectories):
         for j,s in enumerate(s_range):
             print('s:',s)
 
-            _, count_fixation, _ = simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories)
+            count_fixation = simulate_multiple_trajectories_clique(N, M, nb_colonies, migration_rate, s, tmax, nb_trajectories)
             fixation_freq = count_fixation / nb_trajectories
             std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
             
@@ -157,17 +140,18 @@ def run(nb_trajectories):
             fig_data[2, i*len(s_range) + j] = fixation_freq
             fig_data[3, i*len(s_range) + j] = 2*std
             fig_data[4, i*len(s_range) + j] = count_fixation
-        ax.errorbar(s_range, fig_data[2,i*len(s_range):(i+1)*len(s_range)], yerr= fig_data[3,i*len(s_range):(i+1)*len(s_range)], fmt = 'o', alpha=0.5, color=color)
-        #ax.plot(s_range, [phi(N_tot,s,M/N,1/N_tot) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
+        if plot:
+            ax.errorbar(s_range, fig_data[2,i*len(s_range):(i+1)*len(s_range)], yerr= fig_data[3,i*len(s_range):(i+1)*len(s_range)], label = f"M={M} (update fraction: {round(M/N,2)} )", fmt = 'o', alpha=0.5, color=color)
+            #ax.plot(s_range, [phi(N_tot,s,M/N,1/N_tot) for s in s_range], label = f"M={M} (update fraction: {round(M/N,2)} )", color= color)
 
 
-
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel('Relative fitness')
-    ax.set_ylabel('Fixation probability')
-    ax.legend()
-    plt.savefig(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}.png')
+    if plot:
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel('Relative fitness')
+        ax.set_ylabel('Fixation probability')
+        ax.legend()
+        plt.savefig(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_N={N}_D={nb_colonies}.png')
 
 
 
@@ -185,9 +169,22 @@ def run(nb_trajectories):
 
 if __name__ == "__main__":
     #nb_trajectories=10**7
-    nb_trajectories = 20
+    #run(10, plot=False) #compiling the function
 
-    simulation_parameters, fig_data = run(nb_trajectories)
+    N = 10
+    nb_colonies = 10
+
+
+    nb_trajectories = 5*10000
+    
+    start_time = time.time()
+
+    simulation_parameters, fig_data = run(nb_trajectories, N, nb_colonies)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+
+    print('Execution time:', execution_time)
 
     df = pd.DataFrame({
         'M': fig_data[0,:],
@@ -197,9 +194,9 @@ if __name__ == "__main__":
         'count_fixation': fig_data[4,:]
     })
 
-    df.to_csv(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_figdata.csv')
+    df.to_csv(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_N={N}_D={nb_colonies}_figdata.csv')
 
 
 
-    with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
+    with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_N={N}_D={nb_colonies}_parameters.json', "w") as outfile:
         json.dump(simulation_parameters, outfile, indent=4)
