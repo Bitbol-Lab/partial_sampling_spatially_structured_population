@@ -102,12 +102,10 @@ def phi(N,s,rho,x):
 
 # generating the graph
 
-def run(nb_trajectories, plot=True):
-    N = 10
+def run(nb_trajectories, N, nb_colonies, plot=True):
     s_range = np.logspace(-4, -1, num=10)
     tmax = 50000
     
-    nb_colonies = 10
     migration_rate = 0.1
 
 
@@ -153,7 +151,7 @@ def run(nb_trajectories, plot=True):
         ax.set_xlabel('Relative fitness')
         ax.set_ylabel('Fixation probability')
         ax.legend()
-        plt.savefig(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}.png')
+        plt.savefig(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_N={N}_D={nb_colonies}.png')
 
 
 
@@ -173,12 +171,15 @@ if __name__ == "__main__":
     #nb_trajectories=10**7
     #run(10, plot=False) #compiling the function
 
-    
+    N = 10
+    nb_colonies = 10
+
+
     nb_trajectories = 5*10000
     
     start_time = time.time()
 
-    simulation_parameters, fig_data = run(nb_trajectories)
+    simulation_parameters, fig_data = run(nb_trajectories, N, nb_colonies)
 
     end_time = time.time()
     execution_time = end_time - start_time
@@ -193,9 +194,9 @@ if __name__ == "__main__":
         'count_fixation': fig_data[4,:]
     })
 
-    df.to_csv(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_figdata.csv')
+    df.to_csv(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_N={N}_D={nb_colonies}_figdata.csv')
 
 
 
-    with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
+    with open(f'clique_results/clique-graphe_phi-vs-s_n-traj={nb_trajectories}_N={N}_D={nb_colonies}_parameters.json', "w") as outfile:
         json.dump(simulation_parameters, outfile, indent=4)

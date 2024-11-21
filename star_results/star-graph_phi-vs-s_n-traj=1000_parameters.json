@@ -1,7 +1,7 @@
 {
-    "N_tot": 100,
-    "N": 20,
-    "M": 20,
+    "N_tot": 50,
+    "N": 10,
+    "M": 10,
     "number of demes": 5,
     "type_graph": "star",
     "migration rate": 0.01,
@@ -9,7 +9,7 @@
         0.1,
         10.0
     ],
-    "initial_node": 0,
+    "initial_node": "uniformly random",
     "tmax": 10000,
     "nb_trajectories": 1000,
     "s_range": [

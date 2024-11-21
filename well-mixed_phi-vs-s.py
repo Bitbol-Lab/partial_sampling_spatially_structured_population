@@ -8,18 +8,19 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from tqdm import tqdm
+import time
 
 import json
 
-from numba import njit, jit
+from numba import njit, jit, prange, int_, float_
 
 
 # useful functions
 
-@jit(nopython=True)
+@jit(int_(int_, int_, float_, int_, int_))
 def simulate_trajectory(N, M, s, tmax, initial_state=1):
-    states = np.zeros(tmax)
-    states[0] = initial_state
+    #states = np.zeros(tmax)
+    #states[0] = initial_state
     current_state = initial_state
     t=0
     b = True
@@ -34,46 +35,58 @@ def simulate_trajectory(N, M, s, tmax, initial_state=1):
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
 
         # update nb of mutants in the node
-        current_state = current_state - nb_mutants_before_update + nb_mutants_after_update
+        
+        if M==1: #Moran case
+            rand = np.random.rand()
+            if rand <= x*(1-prob):
+                current_state -= 1
+            elif rand <= x*(1-prob) + prob*(1-x):
+                current_state += 1
+        
+        if M > 1: 
+            current_state = current_state - nb_mutants_before_update + nb_mutants_after_update
+
+
         b = 0 < current_state and current_state < N
         t+=1
-        states[t] = current_state
+        #states[t] = current_state
     
-    if t<tmax:
-        states[t+1:] = current_state
+    #if t<tmax:
+        #states[t+1:] = current_state
 
-    fixation = current_state == N
-    return states, fixation
+    if current_state == N:
+        fixation = 1
+    else:
+        fixation = 0
+    return fixation
 
-@jit(parallel=True)
+@njit(parallel=True)
 def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_state=1):
-    all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
-    all_trajectories[:,0] = initial_state
+    #all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
+    #all_trajectories[:,0] = initial_state
 
-    fixation_seq = np.zeros(nb_trajectories, dtype=bool)
+    #fixation_seq = np.zeros(nb_trajectories, dtype=bool)
 
     count_fixation = 0
 
 
     #for trajectory_index in tqdm(range(nb_trajectories)):
-    for trajectory_index in tqdm(range(nb_trajectories)):
-        if trajectory_index%(10**3) == 0:
+    for trajectory_index in prange(nb_trajectories):
+        #if trajectory_index%(10**3) == 0:
             #print('trajectory:', trajectory_index)
-            a= 1
-        states, fixation = simulate_trajectory(N,M,s,tmax,initial_state)
+        fixation = simulate_trajectory(N,M,s,tmax,initial_state)
 
         count_fixation += fixation
 
-        fixation_seq[trajectory_index] = fixation
+        #fixation_seq[trajectory_index] = fixation
 
-        all_trajectories[trajectory_index,:] = states[:]
+        #all_trajectories[trajectory_index,:] = states[:]
         
         
 
-    return all_trajectories, count_fixation, fixation_seq
+    return count_fixation
 
 
-@njit
 def phi(N,s,rho,x):
     num = 1 - np.exp(-2*N*s*x / (2-rho))
     denom = 1 - np.exp(-2*N*s / (2-rho))
@@ -83,12 +96,11 @@ def phi(N,s,rho,x):
 
 
 # generating the graph
-@jit(parallel=True)
-def run(nb_trajectories):
+def run(nb_trajectories,N):
 
-    N = 1000
+    
     s_range = np.logspace(-5, -1, num=10)
-    tmax = 10000
+    tmax = 100000
     
 
 
@@ -112,7 +124,7 @@ def run(nb_trajectories):
         for j,s in enumerate(s_range):
             print('s:',s)
             
-            _, count_fixation, _ = simulate_multiple_trajectories(N,M,s,tmax, nb_trajectories)
+            count_fixation = simulate_multiple_trajectories(N,M,s,tmax, nb_trajectories)
             
             fixation_freq = count_fixation / nb_trajectories
             std = np.sqrt(fixation_freq * (1-fixation_freq) / nb_trajectories)
@@ -133,7 +145,7 @@ def run(nb_trajectories):
     ax.set_xlabel('Relative fitness')
     ax.set_ylabel('Fixation probability')
     ax.legend()
-    plt.savefig(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}.png')
+    plt.savefig(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_N={N}.png')
 
     simulation_parameters = {
         'N':N,
@@ -148,19 +160,27 @@ def run(nb_trajectories):
 if __name__ == "__main__":
 
     #nb_trajectories=10**7
-    nb_trajectories = 400
+    N = 1000
+    nb_trajectories = 10**4
 
-    simulation_parameters, fig_data = run(nb_trajectories)
+    start_time = time.time()
+
+    simulation_parameters, fig_data = run(nb_trajectories,N)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+
+    print('Execution time:', execution_time)
 
     df = pd.DataFrame({
         'M': fig_data[0,:],
         's': fig_data[1,:],
         'fixation_freq': fig_data[2,:],
         'fixation_err': fig_data[3,:],
-        'count_fixation': fig_data[5,:]
+        'count_fixation': fig_data[4,:]
     })
 
-    df.to_csv(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_figdata.csv')
+    df.to_csv(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_N={N}_figdata.csv')
 
-    with open(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_parameters.json', "w") as outfile:
+    with open(f'well-mixed_results/well-mixed_phi-vs-s_n-traj={nb_trajectories}_N={N}parameters.json', "w") as outfile:
         json.dump(simulation_parameters, outfile, indent=4)
