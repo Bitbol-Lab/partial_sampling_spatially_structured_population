@@ -2,10 +2,8 @@
 
 import matplotlib as mpl
 import numpy as np
-import random as rd
 import matplotlib.pyplot as plt
 
-from tqdm import tqdm
 
 import pandas as pd
 

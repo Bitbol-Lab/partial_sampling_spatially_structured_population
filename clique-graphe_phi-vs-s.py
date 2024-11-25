@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 
-from tqdm import tqdm
 
 import json
 

@@ -1,13 +1,18 @@
 import numpy as np
 from scipy.special import comb
 
+import matplotlib.pyplot as plt
+
 ### Computing the standard transition matrix
+
+### ERRORS !!!
 
 def compute_hypergeometric_prob(N, M, i, k):
     return comb(i,k)*comb(N-i, M-k) / comb(N,M)
 
 def compute_WF_prob(N,i,j,s):
-    p = i*(1+s) / (i*(1+s) + N-i)
+    x = i/N
+    p = x*(1+s) / (1+x*s)
     if p==0:
         if j==0:
             res = 1
@@ -18,16 +23,18 @@ def compute_WF_prob(N,i,j,s):
             res = 1
         else:
             res=0
+    elif j<0:
+        res = 0
     else:
         res = comb(N,j) * (p**j) * ((1-p)**(N-j))
     return res
 
 def compute_transition_matrix(N,M,s):
-    P = np.zeros((N+1,N+1), dtype=float)
+    P = np.zeros((N+1,N+1))
     for i in range(N+1):
         for j in range(N+1):
             coeff = sum([compute_hypergeometric_prob(N,M,i,k) * compute_WF_prob(M,i,k+j-i,s)
-                         for k in range(i+1)])
+                         for k in range(i-j,i+1)])
             P[i,j] = coeff
     return P
 
@@ -49,8 +56,13 @@ def estimate_power(epsilon, A): #should this work ????
     res = np.log(epsilon * (1-A_norm)) / np.log(A_norm)
     return res
 
-def truncated_sum_method(A, power=8):
-    return np.linalg.matrix_power(A, power)
+def truncated_sum_method(A, power=10):
+    dim = A.shape[0]
+    res = np.eye(dim)
+    A_power = np.eye(dim)
+    for i in range(power):
+        res += A@A_power
+    return res
 
 def inverse_method(A):
     n = A.shape[0]
@@ -76,15 +88,10 @@ def permutation(i:int, N:int):  # the permutation s.t. P_new[i,j] = P[s(i),s(j)]
 
 def compute_fixation_probability(N,M,s):
     P = compute_transition_matrix(N,M,s)
-    P_new = np.zeros_like(P)
-    for i in range(N+1):
-        for j in range(N+1):
-            P_new[i,j] = P[permutation(i,N), permutation(j,N)]
     
 
-    A = P_new[:N-1, :N-1]
-    print('A:',A)
-    B = P_new[:N-1, N-1:]
+    A = P[1:N, 1:N]
+    B = P[1:N, [0,N]]
 
     inv = inverse_method(A)  # (I-A)^-1
     inv_vect = inv[0,:]
@@ -95,5 +102,8 @@ def compute_fixation_probability(N,M,s):
 
 if __name__ == '__main__':
 
-    print(compute_fixation_probability(10, 10, 0.05))
+    print(compute_transition_matrix(10,3,0)<=1)
+
+
+    
     
