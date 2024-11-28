@@ -93,7 +93,6 @@ def phi(N,s,rho,x):
 
 
 
-# generating the graph
 def run(N, M, log_s_min, log_s_max, nb_trajectories):
     s_range = np.logspace(log_s_min, log_s_max, num=10)
     tmax = 100000
@@ -129,6 +128,7 @@ if __name__ == "__main__":
 
     parameters = {
         'job_array_nb':job_array_nb,
+        'type': 'well-mixed',
         'N':N,
         'M':M,
         'log_s_min':log_s_min,
