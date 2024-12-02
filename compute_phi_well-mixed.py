@@ -82,15 +82,6 @@ def inverse_method(A):
     
 ### computing fixation probability
 
-def permutation(i:int, N:int):  # the permutation s.t. P_new[i,j] = P[s(i),s(j)]
-    assert i>=0 and i<=N
-    if i == 0:
-        i_new = N-1
-    elif i == N:
-        i_new = N
-    else:
-        i_new = i-1
-    return i_new  
 
 
 def compute_fixation_probability(N,M,s):

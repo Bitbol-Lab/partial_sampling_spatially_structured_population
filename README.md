@@ -7,6 +7,8 @@ Intended to be run on SCITAS clusters, each script writes a `.json` file with pa
 
 - `py well-mixed_simulations.py [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories]`
 
+- `py well-mixed_matrix_computation.py [job_array_nb] [N] [M] [log_s_min] [log_s_max]`
+
 - `py clique_simulations.py [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] [migration_rate] [nb_colonies]`
 
 - `py cycle_simulations.py [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] [migration_rate] [nb_colonies] [alpha]`
