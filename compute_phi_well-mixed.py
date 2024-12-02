@@ -3,9 +3,14 @@ from scipy.special import comb
 
 import matplotlib.pyplot as plt
 
-### Computing the standard transition matrix
+import time
 
-### ERRORS !!!
+def phi(N,s,rho,x):
+    num = 1 - np.exp(-2*N*s*x / (2-rho))
+    denom = 1 - np.exp(-2*N*s / (2-rho))
+    return num/denom
+
+### Computing the standard transition matrix
 
 def compute_hypergeometric_prob(N, M, i, k):
     return comb(i,k)*comb(N-i, M-k) / comb(N,M)
@@ -61,8 +66,9 @@ def truncated_sum_method(A, power=10):
     dim = A.shape[0]
     res = np.eye(dim)
     A_power = np.eye(dim)
-    for i in range(power):
-        res += A@A_power
+    for _ in range(power):
+        A_power = A_power@A
+        res += A_power
     return res
 
 def inverse_method(A):
@@ -101,13 +107,44 @@ def compute_fixation_probability(N,M,s):
     return np.inner(inv_vect, B_vect)
 
 
+def plot(N, M, log_s_min=-4, log_s_max=-1, num=10):
+    fig, ax = plt.subplots()
+
+    x = np.logspace(log_s_min, log_s_max, num)
+    y = np.zeros_like(x)
+    y_th = np.zeros_like(x)
+    for i,s in enumerate(x):
+        print('s:',s)
+        y[i] = compute_fixation_probability(N,M,s)
+        y_th[i] = phi(N,s,M/N,1/N)
+    ax.scatter(x, y, label='Matrix computation')
+    ax.plot(x,y_th,'k--', label='theory in diffusion approximation')
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel('Relative fitness')
+    ax.set_ylabel('Fixation probability')
+    ax.legend()
+    plt.show()
+
+
+
 if __name__ == '__main__':
-    P = compute_transition_matrix(10,3,0)
+    N,M,s = 50,3,0.3
+    P = compute_transition_matrix(N,M,s)
+    I = np.eye(N-1)
     
-    #print((P>=0).all(),np.sm(P, axis=1))   # check stochasticity
+    #print("stochasticity: ",(P>=0).all(),np.sum(P, axis=1))   # check stochasticity
 
-    print(np.linalg.det(P))
+    start_time = time.time()
+    fixation_probabilty = compute_fixation_probability(N,M,s)
+    end_time = time.time()
+    execution_time = end_time - start_time
 
+    print('fixation probability: ', fixation_probabilty)
+    print('execution_time: ', execution_time)   #around 5s for N=100
+
+    plot(N,M, -6, -1, 20)
 
 
     
