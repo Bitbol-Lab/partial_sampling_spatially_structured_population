@@ -10,9 +10,7 @@ import matplotlib.pyplot as plt
 def compute_hypergeometric_prob(N, M, i, k):
     return comb(i,k)*comb(N-i, M-k) / comb(N,M)
 
-def compute_WF_prob(N,i,j,s):
-    x = i/N
-    p = x*(1+s) / (1+x*s)
+def compute_binomial_prob(N,j,p):
     if p==0:
         if j==0:
             res = 1
@@ -23,7 +21,7 @@ def compute_WF_prob(N,i,j,s):
             res = 1
         else:
             res=0
-    elif j<0:
+    elif j<0 or j>N:
         res = 0
     else:
         res = comb(N,j) * (p**j) * ((1-p)**(N-j))
@@ -32,8 +30,11 @@ def compute_WF_prob(N,i,j,s):
 def compute_transition_matrix(N,M,s):
     P = np.zeros((N+1,N+1))
     for i in range(N+1):
+        x = i/N
+        p = x*(1+s)/(1+x*s)
         for j in range(N+1):
-            coeff = sum([compute_hypergeometric_prob(N,M,i,k) * compute_WF_prob(M,i,k+j-i,s)
+            
+            coeff = sum([compute_hypergeometric_prob(N,M,i,k) * compute_binomial_prob(M,k+j-i,p)
                          for k in range(i-j,i+1)])
             P[i,j] = coeff
     return P
@@ -101,8 +102,12 @@ def compute_fixation_probability(N,M,s):
 
 
 if __name__ == '__main__':
+    P = compute_transition_matrix(10,3,0)
+    
+    #print((P>=0).all(),np.sm(P, axis=1))   # check stochasticity
 
-    print(compute_transition_matrix(10,3,0)<=1)
+    print(np.linalg.det(P))
+
 
 
     
