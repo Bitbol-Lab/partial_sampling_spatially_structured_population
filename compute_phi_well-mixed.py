@@ -5,10 +5,7 @@ import matplotlib.pyplot as plt
 
 import time
 
-def phi(N,s,rho,x):
-    num = 1 - np.exp(-2*N*s*x / (2-rho))
-    denom = 1 - np.exp(-2*N*s / (2-rho))
-    return num/denom
+from utils import phi
 
 ### Computing the standard transition matrix
 
