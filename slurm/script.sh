@@ -17,5 +17,5 @@ module load intel/2021.6.0
 module load python/3.10.4
 
 source venvs/noe-sim-venv/bin/activate
-python3 /home/prat/well-mixed_simulations.py $SLURM_ARRAY_TASK_ID #[N] [M] [log_s_min] [log_s_max] [nb_trajectories]
+python3 /home/prat/well-mixed_simulations.py $SLURM_ARRAY_TASK_ID $N $M $log_s_min $log_s_max $nb_trajectories
 

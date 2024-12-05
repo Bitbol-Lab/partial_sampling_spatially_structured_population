@@ -3,7 +3,7 @@ Repository for my lab immersion on spatially structured populations with partial
 
 
 ## Slurm folder
-Intended to be run on SCITAS clusters, each script writes a `.json` file with parameters and output data.
+Intended to be run on SCITAS clusters, each script writes a `.json` file with parameters and output data in `./results`.
 
 - `py well-mixed_simulations.py [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories]`
 
