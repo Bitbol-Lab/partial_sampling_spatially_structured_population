@@ -163,6 +163,6 @@ if __name__ == "__main__":
 
     print('Execution time:', execution_time)
 
-    filename = f'slurm/results/Cycle_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}_{nb_trajectories}_{migration_rate}_{nb_colonies}_{alpha}.json'
+    filename = f'results/Cycle_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}_{nb_trajectories}_{migration_rate}_{nb_colonies}_{alpha}.json'
     with open(filename, "w") as outfile:
         json.dump(output, outfile, indent=4)

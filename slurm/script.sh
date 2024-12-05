@@ -1,7 +1,7 @@
 #!/bin/bash
-SBATCH -J CL4_T4e6_fr0.99_survival                        # name of the job
-SBATCH -o ./out_CL4_T4e6_fr0.99.%A_%a                     # name of the output file (%A_%a ensures you have a different name for each job: %A is th job number, %a the array number)
-SBATCH -e ./out_CL4_T4e6_fr0.99.%A_%a                     # name of error file (same as output file -> all in one file)
+SBATCH -J well-mixed_simulations                        # name of the job
+SBATCH -o ./out_well-mixed_simulations%A_%a                     # name of the output file (%A_%a ensures you have a different name for each job: %A is th job number, %a the array number)
+SBATCH -e ./out_well-mixed_simulations%A_%a                     # name of error file (same as output file -> all in one file)
 SBATCH -D /home/prat/                                     # working directory
 SBATCH --array=0-999                                      # this is an array job, where you launch one job per array item (and you can pass different parameters to each job, see below)
 SBATCH --ntasks 1 
@@ -17,5 +17,5 @@ module load intel/2021.6.0
 module load python/3.10.4
 
 source venvs/noe-sim-venv/bin/activate
-python3 /hom/prat/well-mixed_phi-vs-s.py $SLURM_ARRAY_TASK_ID 
+python3 /home/prat/well-mixed_simulations.py $SLURM_ARRAY_TASK_ID #[N] [M] [log_s_min] [log_s_max] [nb_trajectories]
 

@@ -1,10 +1,6 @@
 import sys
 
-import matplotlib as mpl
 import numpy as np
-import matplotlib.pyplot as plt
-
-import pandas as pd
 
 import time
 
@@ -133,6 +129,6 @@ if __name__ == "__main__":
 
     print('Execution time:', execution_time)
 
-    filename = f'slurm/results/WM_mat_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}.json'
+    filename = f'results/WM_mat_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}.json'
     with open(filename, "w") as outfile:
         json.dump(output, outfile, indent=4)
