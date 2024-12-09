@@ -94,9 +94,24 @@ def WM_paper(min_job_number: int, max_job_number: int):
 
     for i,M in enumerate(Ms):
         color = colors[i]
-        y = nb_fixations[i] / nb_trajectories
+        y = nb_fixations[i,:] / nb_trajectories
         y_err = np.sqrt(y * (1-y)/nb_trajectories)
-        
+        y_th = np.array([phi(N,s,M/N, 1/N) for s in s_range])
+        ax.errorbar(s_range, y, yerr= y_err, fmt = 'o', alpha=0.5, color=color)
+        ax.plot(s_range, y_th, label = f"M={round(M)} (update fraction: {round(M/N,2)} )", color= color)
+
+
+    
+
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel('Relative fitness')
+    ax.set_ylabel('Fixation probability')
+    ax.legend()
+    plt.show()
+
+
 
 
 
@@ -108,4 +123,5 @@ def WM_paper(min_job_number: int, max_job_number: int):
 
 
 if __name__ == '__main__':
-    compare_WM_mat(1)
+    #compare_WM_mat(1)
+    WM_paper(1, 5)
