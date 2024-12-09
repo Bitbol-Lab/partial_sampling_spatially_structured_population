@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 import numpy as np
+import pandas as pd
 
 import json
 
@@ -14,14 +15,14 @@ from utils import phi
 
 # variables
 
-results_dir = 'results/'
 
 # functions
 
-def recover_data(type: str, job_number: int):
+def recover_data(type: str, results_dir: str, job_number: int):
     """
     inputs: 
      -> type: str ('WM', 'WM_mat', 'Star', 'Cycle', 'Clique')
+     -> results_dir: str (results directory)
      -> job_number: int
     output:
      -> data: dict
@@ -29,7 +30,7 @@ def recover_data(type: str, job_number: int):
     """
     datafile = None
     beginning = type + '_' + str(job_number) + '_'
-    for filename in os.listdir('results'):
+    for filename in os.listdir(results_dir):
         root, ext = os.path.splitext(filename)
         if root.startswith(beginning) and ext == '.json':
             datafile = filename
@@ -38,8 +39,9 @@ def recover_data(type: str, job_number: int):
     return data
 
 def compare_WM_mat(job_number: int):
-    mat_data = recover_data('WM_mat',1)
-    sim_data = recover_data('WM',1)
+    results_dir = 'results/compare_sim-mat/'
+    mat_data = recover_data('WM_mat',results_dir, job_number)
+    sim_data = recover_data('WM',results_dir, job_number)
 
     assert mat_data['s_range'] == sim_data['s_range']
     s = np.array(mat_data['s_range'])
@@ -64,6 +66,44 @@ def compare_WM_mat(job_number: int):
     ax.set_ylabel('Fixation probability')
     ax.legend()
     plt.show()
+
+
+def WM_paper(min_job_number: int, max_job_number: int):
+    results_dir = 'results/'
+    n_jobs = 1 + max_job_number - min_job_number
+    first_data = recover_data('WM', results_dir, min_job_number)
+    s_range = np.array(first_data['s_range'])
+    nb_fixations = np.zeros((n_jobs, len(s_range)))
+    Ms = np.zeros(n_jobs)
+    Ms[0] = first_data['parameters']['M']
+    N= first_data['parameters']['N']
+    nb_trajectories = first_data['parameters']['nb_trajectories']
+
+    for i in range(min_job_number+1, max_job_number + 1):
+        data_i = recover_data('WM', results_dir, i)
+        Ms[i - min_job_number] = data_i['parameters']['M']
+        nb_fixations[i-min_job_number,:] = np.array(data_i['nb_fixations'])
+
+
+
+    cmap = mpl.colormaps['plasma']
+    colors = cmap(np.linspace(0, 1, len(Ms)))
+
+    fig, ax = plt.subplots()
+
+
+    for i,M in enumerate(Ms):
+        color = colors[i]
+        y = nb_fixations[i] / nb_trajectories
+        y_err = np.sqrt(y * (1-y)/nb_trajectories)
+        
+
+
+
+    
+    
+        
+
 
 
 
