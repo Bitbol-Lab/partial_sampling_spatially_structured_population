@@ -68,8 +68,7 @@ def compare_WM_mat(job_number: int):
     plt.show()
 
 
-def WM_paper(min_job_number: int, max_job_number: int):
-    results_dir = 'results/'
+def WM_paper(min_job_number: int, max_job_number: int, results_dir : str= 'results/'):
     n_jobs = 1 + max_job_number - min_job_number
     first_data = recover_data('WM', results_dir, min_job_number)
     s_range = np.array(first_data['s_range'])
@@ -109,13 +108,14 @@ def WM_paper(min_job_number: int, max_job_number: int):
     ax.set_xlabel('Relative fitness')
     ax.set_ylabel('Fixation probability')
     ax.legend()
-    plt.show()
+    fig.savefig(results_dir + 'WM_paper_1')
 
 
 
 
 
     
+
     
         
 
@@ -124,4 +124,4 @@ def WM_paper(min_job_number: int, max_job_number: int):
 
 if __name__ == '__main__':
     #compare_WM_mat(1)
-    WM_paper(1, 5)
+    WM_paper(1, 5, 'results/WM_paper/')
