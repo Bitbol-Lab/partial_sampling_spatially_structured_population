@@ -13,8 +13,7 @@ from numba import njit, jit, prange, int_, float_
 
 @jit(int_(int_, int_, int_, float_, float_,int_, float_, int_ ))
 def simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tmax):
-    assert 1 - (nb_colonies-1)*alpha*migration_rate >= 0
-    assert 1 - migration_rate >= 0
+    
 
 
     b = True
@@ -30,8 +29,9 @@ def simulate_star(N, M, nb_colonies, migration_rate, alpha, initial_node, s, tma
 
 
     # creating a directed graph
+    assert 1 - (nb_colonies-1)*alpha*migration_rate >= 0
+    assert 1 - migration_rate >= 0
     DG = np.zeros((nb_colonies, nb_colonies), dtype=float)
-    #DG_nodes = np.arange(nb_colonies)
 
 
     #adding weighted edges for the center of the star

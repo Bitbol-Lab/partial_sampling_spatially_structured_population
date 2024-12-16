@@ -13,7 +13,6 @@ from numba import njit, jit, prange, int_, float_
 
 @jit(int_(int_, int_, int_, float_, float_, float_, int_ ))
 def simulate_cycle(N, M, nb_colonies, migration_rate, alpha, s, tmax):
-    assert 1 - (1 + alpha)*migration_rate >= 0
 
 
     b = True
@@ -28,9 +27,8 @@ def simulate_cycle(N, M, nb_colonies, migration_rate, alpha, s, tmax):
 
 
     # creating a directed graph
+    assert 1 - (1 + alpha)*migration_rate >= 0
     DG = np.zeros((nb_colonies, nb_colonies), dtype=float)
-
-    #adding weighted edges for the center of the star
 
     for node in range(nb_colonies):
         next_node = (node + 1) % nb_colonies

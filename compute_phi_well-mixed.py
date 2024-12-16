@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 import time
 
-from utils import phi
+from utils.graph_simulation import phi
 
 ### Computing the standard transition matrix
 

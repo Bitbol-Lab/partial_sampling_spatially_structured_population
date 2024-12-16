@@ -1,7 +1,5 @@
 import sys
 
-## Varying s
-
 import numpy as np
 
 import json
