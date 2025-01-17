@@ -7,11 +7,11 @@ import time
 from utils.graph_simulation import sweep_s_graph
 from utils.graph_generation import generate_clique_graph, generate_cycle_graph, generate_star_graph
 
-
+graph_types = ['star', 'cycle', 'clique', 'lign']
 
 if __name__ == "__main__":
     prefix = 'test'
-    results_dir = 'results/'
+    results_dir = 'results/test/'
     tmax = 100000
     num = 10
     initial_node = 0 # changed if type == 'star'
@@ -66,6 +66,18 @@ if __name__ == "__main__":
         parameters['nb_demes'] = nb_demes
         parameters['alpha'] = alpha
         parameters['initial_node'] = initial_node
+    
+    elif type == 'well-mixed_sim':
+        # TODO
+        x = 0
+    
+    elif type == 'well-mixed_mat':
+        # TODO
+        x=0
+
+    elif type == 'lign':
+        # TODO
+        x = 0
 
 
     
@@ -76,30 +88,34 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    
+    # TODO: consider the other types etc
+    if type in graph_types:
+        s_range, fixation_counts, all_extinction_times, all_fixation_times = sweep_s_graph(
+            DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
 
-    s_range, fixation_counts, all_extinction_times, all_fixation_times = sweep_s_graph(
-        DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
+
+
+        output = {
+            'parameters': parameters,
+            's_range': list(s_range),
+            'nb_fixations': list(fixation_counts),
+            'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
+            'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)])
+        }
+
 
     end_time = time.time()
     execution_time = end_time - start_time
-
-
-    output = {
-        'parameters': parameters,
-        's_range': list(s_range),
-        'nb_fixations': list(fixation_counts),
-        'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
-        'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)])
-    }
 
     print('Execution time:', execution_time)
 
     
 
-    filename = results_dir + f'{prefix}_{type}_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}_{nb_trajectories}_{migration_rate}_{nb_demes}'
-    if type == 'cycle' or type == 'star':
-        filename += f'_{alpha}'
+    filename = results_dir + f'{prefix}_{type}_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}_{nb_trajectories}'
+    if type in graph_types:
+        filename += f'_{migration_rate}_{nb_demes}'
+        if type == 'cycle' or type == 'star':
+            filename += f'_{alpha}'
 
     filename += '.json'
 

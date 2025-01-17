@@ -14,3 +14,12 @@ Intended to be run on SCITAS clusters, each script writes a `.json` file with pa
 - `py cycle_simulations.py [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] [migration_rate] [nb_colonies] [alpha]`
 
 - `py star_simulations.py [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] [migration_rate] [nb_colonies] [alpha]`
+
+
+Should be replaced by running: 
+
+`py slurm main [type] [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha) (initial node)`
+
+The arguments in parentheses depend on the chosen type.
+
+
