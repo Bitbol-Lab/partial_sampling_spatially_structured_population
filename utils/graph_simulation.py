@@ -1,12 +1,7 @@
-import sys
-
 import numpy as np
-
-import json
 
 from numba import njit, prange, jit #, int_, float_
 
-import time
 
 
 # useful functions
@@ -133,6 +128,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
     Sweeps a logspace interval of relative fitness values [10**log_s_min, 10**log_s_max]
     Arguments:
      -> DG: ndArray(nb_demes, nb_demes), matrix representing a directed graph
+     -> nb_demes: int, number of demes / nodes in the graph
      -> N: int, number of individuals per deme
      -> M: int, number of updated individuals per deme
      -> log_s_min: int,
@@ -146,6 +142,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
      -> fixation_counts: ndArray(num), fixation_counts[i] is the number of fixation counted for s = s_range[i]
      -> all_fixation_times: ndArray(num, nb_trajectories), all_fixation_times[s_index, traj_index] is the fixation time (if it was observed) at trajectory [traj_index] for s = s_range[s_index] (0 otherwise)
      -> all_extinction_times: ndArray(num, nb_trajectories), all_extinction_times[s_index, traj_index] is the extinction time (if it was observed) at trajectory [traj_index] for s = s_range[s_index] (0 otherwise)
+     -> all_extinction_bools: ndArray(num, nb_trajectories), all_extinction_bools[s_index, traj_index] is 1 if fixation happened 0 otherwise
     """
     s_range = np.logspace(log_s_min, log_s_max, num=num)
     tmax = 100000
@@ -153,6 +150,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
     fixation_counts = np.zeros_like(s_range)
     all_extinction_times = np.zeros((num, nb_trajectories))
     all_fixation_times = np.zeros((num, nb_trajectories))
+    all_fixation_bools = np.zeros((num, nb_trajectories))
 
     
 
@@ -161,6 +159,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
         fixation_counts[i] = count_fixation
         all_fixation_times[i,:] = fixation_times[:]
         all_extinction_times[i,:] = extinction_times[:]
+        all_fixation_bools[i,:] = fixation_seq[:]
 
 
         #mean_extinction_times[i] = sum(extinction_times)/(nb_trajectories - count_fixation)
@@ -168,7 +167,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
         #    mean_fixation_times[i] = sum(fixation_times)/count_fixation
 
 
-    return s_range, fixation_counts, all_fixation_times, all_extinction_times
+    return s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools
 
 
 

@@ -37,7 +37,6 @@ def simulate_clique(N, M, nb_colonies, migration_rate, s, tmax):
     #trajectories[0, :] = i_nodes
 
     while t < tmax and b:
-        # Choose a random node
         i_nodes_before = i_nodes[::]
         for selected_node in range(nb_colonies):
 

@@ -6,15 +6,19 @@ import time
 
 from utils.graph_simulation import sweep_s_graph
 from utils.graph_generation import generate_clique_graph, generate_cycle_graph, generate_star_graph
+from utils.wm_sim import sweep_s_wm_sim
+from utils.wm_mat import sweep_s_wm_mat
 
 graph_types = ['star', 'cycle', 'clique', 'lign']
+
+sim_types = ['star', 'cycle', 'clique', 'lign', 'wm_sim']
 
 if __name__ == "__main__":
     prefix = 'test'
     results_dir = 'results/test/'
     tmax = 100000
     num = 10
-    initial_node = 0 # changed if type == 'star'
+    initial_node = 0 # will be changed if type == 'star'
 
     type = sys.argv[1]
 
@@ -23,16 +27,21 @@ if __name__ == "__main__":
     M = int(sys.argv[4])
     log_s_min = int(sys.argv[5])
     log_s_max = int(sys.argv[6])
-    nb_trajectories = int(sys.argv[7])
+
     parameters = {
-        'type': type,
-        'job_array_nb':job_array_nb,
-        'N':N,
-        'M':M,
-        'log_s_min':log_s_min,
-        'log_s_max':log_s_max,
-        'nb_trajectories':nb_trajectories
+            'type': type,
+            'job_array_nb':job_array_nb,
+            'N':N,
+            'M':M,
+            'log_s_min':log_s_min,
+            'log_s_max':log_s_max,
     }
+
+    if type in sim_types:
+        nb_trajectories = int(sys.argv[7])
+        parameters['nb_trajectories'] = nb_trajectories
+
+    ##### Parameters for each type of simulation
 
     if type == 'clique':
         migration_rate = float(sys.argv[8])
@@ -67,13 +76,6 @@ if __name__ == "__main__":
         parameters['alpha'] = alpha
         parameters['initial_node'] = initial_node
     
-    elif type == 'well-mixed_sim':
-        # TODO
-        x = 0
-    
-    elif type == 'well-mixed_mat':
-        # TODO
-        x=0
 
     elif type == 'lign':
         # TODO
@@ -90,7 +92,7 @@ if __name__ == "__main__":
 
     # TODO: consider the other types etc
     if type in graph_types:
-        s_range, fixation_counts, all_extinction_times, all_fixation_times = sweep_s_graph(
+        s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
             DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
 
 
@@ -100,8 +102,34 @@ if __name__ == "__main__":
             's_range': list(s_range),
             'nb_fixations': list(fixation_counts),
             'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
-            'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)])
+            'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
+            'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
         }
+
+    elif type == 'wm_sim':
+        initial_state = 1
+        s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_wm_sim(
+            N, M, log_s_min, log_s_max, initial_state, nb_trajectories, tmax, num)
+
+        output = {
+            'parameters': parameters,
+            's_range': list(s_range),
+            'nb_fixations': list(fixation_counts),
+            'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
+            'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
+            'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
+        }
+
+    elif type == 'wm_mat':
+        s_range, fixation_probabilities = sweep_s_wm_mat(N, M, log_s_min, log_s_max, num)
+
+        output = {
+            'parameters': parameters,
+            's_range': list(s_range),
+            'fixation_probabilities': list(fixation_probabilities)
+        }
+
+
 
 
     end_time = time.time()
@@ -111,7 +139,10 @@ if __name__ == "__main__":
 
     
 
-    filename = results_dir + f'{prefix}_{type}_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}_{nb_trajectories}'
+    filename = results_dir + f'{prefix}_{type}_{job_array_nb}_{N}_{M}_{log_s_min}_{log_s_max}'
+
+    if type in sim_types:
+        filename += f'_{nb_trajectories}'
     if type in graph_types:
         filename += f'_{migration_rate}_{nb_demes}'
         if type == 'cycle' or type == 'star':

@@ -18,8 +18,18 @@ Intended to be run on SCITAS clusters, each script writes a `.json` file with pa
 
 Should be replaced by running: 
 
-`py slurm main [type] [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha) (initial node)`
+`py slurm-main [type] [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha) (initial node)`
 
-The arguments in parentheses depend on the chosen type.
+The arguments in parentheses depend on the chosen type:
+
+- For clique graphs: `py slurm-main clique [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes)`
+
+- For cycle graphs: `py slurm-main cycle [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha)`
+
+- For star graphs: `py slurm-main star [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha) (initial node)`
+
+- For well-mixed simulations: `py slurm-main wm_sim [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories]`
+
+- For well-mixed matrix computations: `py slurm-main wm_mat [job_array_nb] [N] [M] [log_s_min] [log_s_max]`
 
 
