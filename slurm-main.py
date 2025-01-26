@@ -5,7 +5,7 @@ import sys
 import time
 
 from utils.graph_simulation import sweep_s_graph
-from utils.graph_generation import generate_clique_graph, generate_cycle_graph, generate_star_graph
+from utils.graph_generation import generate_clique_graph, generate_cycle_graph, generate_star_graph, generate_line_graph
 from utils.wm_sim import sweep_s_wm_sim
 from utils.wm_mat import sweep_s_wm_mat
 
@@ -65,30 +65,25 @@ if __name__ == "__main__":
         parameters['nb_demes'] = nb_demes
         parameters['alpha'] = alpha
 
-    elif type == 'star':
+    elif type == 'star' or type == 'line':
         migration_rate = float(sys.argv[8])
         nb_demes = int(sys.argv[9])
         alpha = float(sys.argv[10])
         initial_node = int(sys.argv[11])
 
-        DG = generate_star_graph(nb_demes, migration_rate, alpha)
-
+        if type == 'star':
+            DG = generate_star_graph(nb_demes, migration_rate, alpha)
+        else: ## for lines
+            DG = generate_line_graph(nb_demes, migration_rate, alpha)
+        
         parameters['migration_rate'] = migration_rate
         parameters['nb_demes'] = nb_demes
         parameters['alpha'] = alpha
         parameters['initial_node'] = initial_node
     
 
-    elif type == 'line':
-        # TODO
-        x = 0
 
 
-    
-            
-
-
-    
 
     start_time = time.time()
 

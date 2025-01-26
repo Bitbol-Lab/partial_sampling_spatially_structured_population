@@ -36,6 +36,8 @@ python3 /home/prat/slurm-main.py cycle $SLURM_ARRAY_TASK_ID $N_graph $M $log_s_m
 
 python3 /home/prat/slurm-main.py star $SLURM_ARRAY_TASK_ID $N_graph $M $log_s_min $log_s_max $nb_trajectories $migration_rate $nb_demes $alpha $initial_node
 
+python3 /home/prat/slurm-main.py line $SLURM_ARRAY_TASK_ID $N_graph $M $log_s_min $log_s_max $nb_trajectories $migration_rate $nb_demes $alpha $initial_node
+
 
 
 

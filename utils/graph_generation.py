@@ -59,3 +59,33 @@ def generate_star_graph(nb_demes, migration_rate, alpha):
     DG[0, 0] = 1 -(nb_demes - 1)*alpha*migration_rate
     return DG
 
+
+@jit
+def generate_line_graph(nb_demes, migration_rate, alpha):
+    assert 1 - (1+alpha)*migration_rate >= 0
+    DG = np.zeros((nb_demes, nb_demes), dtype=float)
+
+    # First node
+
+    DG[0,0] = 1 - migration_rate
+
+    DG[0,1] = alpha*migration_rate
+
+    # Last node
+
+    DG[nb_demes - 1, nb_demes - 1] = 1 - alpha * migration_rate
+
+    DG[nb_demes - 1, nb_demes - 2] = migration_rate
+
+    for i in range(1,nb_demes-1):
+        # edge to the right
+        DG[i, i + 1] = alpha * migration_rate
+
+        # edge to the left
+        DG[i, i - 1] = migration_rate
+
+        # loops
+        DG[i, i] = 1 - migration_rate * (1+alpha)
+
+    return DG
+
