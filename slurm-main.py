@@ -9,16 +9,18 @@ from utils.graph_generation import generate_clique_graph, generate_cycle_graph, 
 from utils.wm_sim import sweep_s_wm_sim
 from utils.wm_mat import sweep_s_wm_mat
 
-graph_types = ['star', 'cycle', 'clique', 'lign']
+graph_types = ['star', 'cycle', 'clique', 'line']
 
-sim_types = ['star', 'cycle', 'clique', 'lign', 'wm_sim']
+sim_types = ['star', 'cycle', 'clique', 'line', 'wm_sim']
+
+all_types = ['star', 'cycle', 'clique', 'line', 'wm_sim', 'wm_mat']
 
 if __name__ == "__main__":
-    prefix = 'test'
-    results_dir = 'results/test/'
-    tmax = 100000
+    prefix = 'expA'
+    results_dir = 'results/expA/'
+    tmax = 1000000
     num = 10
-    initial_node = 0 # will be changed if type == 'star'
+    initial_node = 0    # will be changed if type == 'star'
 
     type = sys.argv[1]
 
@@ -77,7 +79,7 @@ if __name__ == "__main__":
         parameters['initial_node'] = initial_node
     
 
-    elif type == 'lign':
+    elif type == 'line':
         # TODO
         x = 0
 
@@ -90,7 +92,9 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # TODO: consider the other types etc
+
+    ### Simulations or computations for each type
+
     if type in graph_types:
         s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
             DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
@@ -130,8 +134,6 @@ if __name__ == "__main__":
         }
 
 
-
-
     end_time = time.time()
     execution_time = end_time - start_time
 
@@ -143,6 +145,7 @@ if __name__ == "__main__":
 
     if type in sim_types:
         filename += f'_{nb_trajectories}'
+    
     if type in graph_types:
         filename += f'_{migration_rate}_{nb_demes}'
         if type == 'cycle' or type == 'star':
