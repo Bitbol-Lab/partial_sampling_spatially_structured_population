@@ -1,5 +1,7 @@
 import json
 
+import numpy as np
+
 import sys
 
 import time
@@ -8,8 +10,16 @@ from utils.graph_simulation import sweep_s_graph
 from utils.graph_generation import generate_clique_graph, generate_cycle_graph, generate_star_graph, generate_line_graph
 from utils.wm_sim import sweep_s_wm_sim
 from utils.wm_mat import sweep_s_wm_mat
+from utils.misc import store_output
+
+prefix = 'simC'
+results_dir = 'results/simC/'
+tmax = 10000000
+num = 50
 
 graph_types = ['star', 'cycle', 'clique', 'line']
+
+symmetric_graph_types = ['cycle', 'clique']
 
 sim_types = ['star', 'cycle', 'clique', 'line', 'wm_sim']
 
@@ -17,11 +27,10 @@ all_types = ['star', 'cycle', 'clique', 'line', 'wm_sim', 'wm_mat']
 
 STORE_FIXATION_TIMES = False
 
+
+
 if __name__ == "__main__":
-    prefix = 'simB'
-    results_dir = 'results/simB/'
-    tmax = 1000000
-    num = 50
+    
     initial_node = 0    # will be changed if type == 'star'
 
     type = sys.argv[1]
@@ -71,7 +80,9 @@ if __name__ == "__main__":
         migration_rate = float(sys.argv[8])
         nb_demes = int(sys.argv[9])
         alpha = float(sys.argv[10])
-        initial_node = int(sys.argv[11])
+        initial_node = sys.argv[11]
+        if initial_node != 'avg': #simulation will be run with a specified initial node
+            initial_node = int(initial_node)
 
         if type == 'star':
             DG = generate_star_graph(nb_demes, migration_rate, alpha)
@@ -92,47 +103,52 @@ if __name__ == "__main__":
 
     ### Simulations or computations for each type
 
-    if type in graph_types:
-        s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
-            DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
+    if type=='line' and initial_node=='avg':
+        assert not STORE_FIXATION_TIMES     #storing fixations times is not supported in this case (would not work with the script generating histograms)
+        nb_fixations_nodes = np.zeros((nb_demes, num))
+        #all_extinction_times_nodes = np.zeros((nb_demes, num, nb_trajectories))
+        #all_fixation_times_nodes = np.zeros((nb_demes, num, nb_trajectories))
+        #all_fixation_bools_nodes = np.zeros((nb_demes, num, nb_trajectories))
+
+        for node in range(nb_demes):
+            s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
+            DG, nb_demes, N, M, log_s_min, log_s_max, node, nb_trajectories, tmax, num)
+            nb_fixations_nodes[node,:] = fixation_counts[:]
+            #all_extinction_times_nodes[node,:,:] = all_extinction_times[:,:]
+            #all_fixation_times_nodes[node,:,:] = all_fixation_times[:,:]
+            #all_fixation_bools_nodes[node,:,:] = all_fixation_bools[:,:]
+        averaged_nb_fixations = np.mean(nb_fixations_nodes, axis=0)
+        
+
+        output = store_output(
+            STORE_FIXATION_TIMES, parameters, s_range, averaged_nb_fixations, all_extinction_times, all_fixation_times, all_fixation_bools)
+    
+    elif type=='star'and initial_node=='avg':
+        assert not STORE_FIXATION_TIMES     #storing fixations times is not supported in this case (would not work with the script generating histograms)
+        
+        
+        #center node
+        s_range, fixation_counts_center, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
+            DG, nb_demes, N, M, log_s_min, log_s_max, 0, nb_trajectories, tmax, num)
+        
+        #leaf node
+        s_range, fixation_counts_leaf, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
+            DG, nb_demes, N, M, log_s_min, log_s_max, 1, nb_trajectories, tmax, num)
+
+        averaged_nb_fixations = (fixation_counts_center + (nb_demes-1)*fixation_counts_leaf)/nb_demes
+        
+        output = store_output(
+            STORE_FIXATION_TIMES, parameters, s_range, averaged_nb_fixations, all_extinction_times, all_fixation_times, all_fixation_bools)
+    
 
 
-        if STORE_FIXATION_TIMES:
-            output = {
-                'parameters': parameters,
-                's_range': list(s_range),
-                'nb_fixations': list(fixation_counts),
-                'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
-                'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
-                'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
-            }
-        else:
-            output = {
-                'parameters': parameters,
-                's_range': list(s_range),
-                'nb_fixations': list(fixation_counts)
-            }
-
+    
     elif type == 'wm_sim':
         initial_state = 1
         s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_wm_sim(
             N, M, log_s_min, log_s_max, initial_state, nb_trajectories, tmax, num)
 
-        if STORE_FIXATION_TIMES:
-            output = {
-                'parameters': parameters,
-                's_range': list(s_range),
-                'nb_fixations': list(fixation_counts),
-                'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
-                'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
-                'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
-            }
-        else:
-            output = {
-                'parameters': parameters,
-                's_range': list(s_range),
-                'nb_fixations': list(fixation_counts)
-            }
+        output = store_output(STORE_FIXATION_TIMES, parameters, s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools)
 
 
     elif type == 'wm_mat':
@@ -143,6 +159,14 @@ if __name__ == "__main__":
             's_range': list(s_range),
             'fixation_probabilities': list(fixation_probabilities)
         }
+
+    else:
+        s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
+            DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
+
+        output = store_output(STORE_FIXATION_TIMES, parameters, s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools)
+
+
 
 
     end_time = time.time()

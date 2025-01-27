@@ -112,21 +112,44 @@ def WM_paper(min_job_number: int, max_job_number: int, results_dir : str= 'resul
     fig.savefig(results_dir + 'WM_paper_1')
 
 
-def expA(min_job_number: int, max_job_number: int, results_dir : str= 'results/expA/'):
+def expA(prefix: str, min_job_number: int, max_job_number: int,type: str,  results_dir : str= 'results/expA/'):
+    """
+    Plots with y=fixation probability, x=s, different lines for different sampling fractions
+    """
     n_jobs = 1 + max_job_number - min_job_number
-    first_data = recover_data('expA','wm_mat', results_dir, min_job_number)
+    first_data = recover_data(prefix,type, results_dir, min_job_number)
     s_range = np.array(first_data['s_range'])
-    fixation_probabilities = np.zeros((n_jobs, len(s_range)))
-    Ms = np.zeros(n_jobs)
-    Ms[0] = first_data['parameters']['M']
-    N= first_data['parameters']['N']
-    
-    for i in range(min_job_number+1, max_job_number + 1):
-        data_i = recover_data('expA','wm_mat', results_dir, i)
-        Ms[i - min_job_number] = data_i['parameters']['M']
-        fixation_probabilities[i-min_job_number,:] = np.array(data_i['fixation_probabilities'])
+
+    metadata = first_data['parameters'].copy()
 
 
+    if type == 'wm_mat':
+        fixation_probabilities = np.zeros((n_jobs, len(s_range)))
+        Ms = np.zeros(n_jobs)
+        Ms[0] = first_data['parameters']['M']
+        fixation_probabilities[0,:] = np.array(first_data['fixation_probabilities'])
+        N= first_data['parameters']['N']
+        
+        for i in range(min_job_number+1, max_job_number + 1):
+            data_i = recover_data(prefix,type, results_dir, i)
+            Ms[i - min_job_number] = data_i['parameters']['M']
+            fixation_probabilities[i-min_job_number,:] = np.array(data_i['fixation_probabilities'])
+
+    else:
+        fixation_probabilities = np.zeros((n_jobs, len(s_range)))
+        Ms = np.zeros(n_jobs)
+        Ms[0] = first_data['parameters']['M']
+        nb_trajectories = first_data['parameters']['nb_trajectories']
+
+        fixation_probabilities[0,:] = np.array(first_data['nb_fixations'])/nb_trajectories
+        N= first_data['parameters']['N']
+        
+        for i in range(min_job_number+1, max_job_number + 1):
+            data_i = recover_data(prefix,type, results_dir, i)
+            Ms[i - min_job_number] = data_i['parameters']['M']
+            fixation_probabilities[i-min_job_number,:] = np.array(data_i['nb_fixations'])/nb_trajectories
+
+    metadata['M'] = list(Ms)
 
     cmap = mpl.colormaps['plasma']
     colors = cmap(np.linspace(0, 1, len(Ms)))
@@ -137,9 +160,10 @@ def expA(min_job_number: int, max_job_number: int, results_dir : str= 'results/e
     for i,M in enumerate(Ms):
         color = colors[i]
         y = fixation_probabilities[i,:]
-        y_th = np.array([phi(N,s,M/N, 1/N) for s in s_range])
-        ax.scatter(s_range, y, alpha=0.5, color=color)
-        ax.plot(s_range, y_th, label = f"M={round(M)} (update fraction: {round(M/N,2)} )", color= color)
+        y_err = np.sqrt(y * (1-y)/nb_trajectories)
+        #y_th = np.array([phi(N,s,M/N, 1/N) for s in s_range])
+        ax.errorbar(s_range, y, yerr=y_err, fmt = 'o', alpha=0.5,label = f"M={round(M)} (update fraction: {round(M/N,2)})", color=color)
+        #ax.plot(s_range, y_th, label = f"M={round(M)} (update fraction: {round(M/N,2)} )", color= color)
 
 
     
@@ -148,9 +172,16 @@ def expA(min_job_number: int, max_job_number: int, results_dir : str= 'results/e
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel('Relative fitness')
-    ax.set_ylabel('Fixation probability')
+    ax.set_ylabel('Fixation probability (' + type +')')
     ax.legend()
-    fig.savefig(results_dir + 'expA_wm_mat')
+
+    fig_name = results_dir + prefix + '_' + type
+    fig.savefig(fig_name)
+
+    filename = fig_name + '_metadata.json'
+
+    with open(filename, "w") as outfile:
+        json.dump(metadata, outfile, indent=4)
 
 
 
@@ -159,31 +190,43 @@ def time_histograms(results_dir, prefix, type, job_number):
     n_bins = 20
     
     data = recover_data(prefix, type, results_dir, job_number)
+    metadata = data['parameters'].copy()
     s_range = np.array(data['s_range'])
     num = len(s_range)
     nb_trajectories = data['parameters']['nb_trajectories']
     s_index = num-1
+    metadata['s'] = s_range[s_index]
     
     all_fixation_bools = np.array(data['all_fixation_bools'])[:, s_index]
     all_extinction_times = np.array(data['all_extinction_times'])[:, s_index]
     all_fixation_times = np.array(data['all_fixation_times'])[:, s_index]
 
     extinction_times = all_extinction_times[all_fixation_bools == 0.]
-    print(extinction_times)
+
     fixation_times = all_fixation_times[all_fixation_bools == 1.]
-    print(fixation_times)
+
     fig, axs = plt.subplots(1, 2, sharey=False, tight_layout=True)
 
     # We can set the number of bins with the *bins* keyword argument.
     dist1 = extinction_times
     dist2 = fixation_times
-    print(dist1)
-    print(dist2)
+    
     axs[0].hist(dist1, bins=n_bins)
+    axs[0].set_xlabel('Extinction time')
 
     axs[1].hist(dist2, bins=n_bins)
+    axs[1].set_xlabel('Fixation time')
 
-    plt.savefig('histogram_test')
+    fig_name = results_dir + 'histogram_' + prefix + '_' + type
+
+    plt.savefig(fig_name)
+    
+    
+    filename = fig_name + '_metadata.json'
+
+    with open(filename, "w") as outfile:
+        json.dump(metadata, outfile, indent=4)
+
     
 
 
@@ -196,5 +239,6 @@ def time_histograms(results_dir, prefix, type, job_number):
 if __name__ == '__main__':
     #compare_WM_mat(1)
     #WM_paper(1, 5, 'results/WM_paper/')
-    #expA(1, 5, 'results/expA/')
-    time_histograms('results/expA_100runs/', 'expA', 'line',3)
+    for type in ['clique','cycle','line','star']:
+        expA('expA',1,5,type, 'results/expA_graph_e7_runs/')
+    time_histograms('results/expA_graph_e7_runs/', 'expA', 'clique',5)

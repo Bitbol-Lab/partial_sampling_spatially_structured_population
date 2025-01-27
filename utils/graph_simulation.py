@@ -1,5 +1,7 @@
 import numpy as np
 
+from scipy.stats import binom
+
 from numba import njit, prange, jit #, int_, float_
 
 
@@ -50,9 +52,10 @@ def simulate_graph(DG, nb_demes, N, M, s, tmax, initial_node=0):
             # Binomial sampling
             x_tilde = sum([i_nodes_before[k] * DG[k, selected_node]/N for k in range(nb_demes)])
             #print('x_tilde:', x_tilde)
-            prob = min(x_tilde * (1 + s) / (1 + x_tilde * s), 1)
+            prob = max(min(x_tilde * (1 + s) / (1 + x_tilde * s), 1),0)  #clip probability to stay in [0,1]
             n_trials = M
             nb_mutants_after_update = np.random.binomial(n_trials, prob)
+            #nb_mutants_after_update = binom.rvs(n_trials, prob)   #does not work with numba
 
             # Update mutants in the node
             i_nodes[selected_node] = ngood - nb_mutants_before_update + nb_mutants_after_update

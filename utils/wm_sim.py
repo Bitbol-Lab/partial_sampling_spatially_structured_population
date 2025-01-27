@@ -1,5 +1,7 @@
 import numpy as np
 
+from scipy.stats import binom
+
 from numba import njit, jit, prange
 
 
@@ -31,9 +33,9 @@ def simulate_trajectory(N, M, s, tmax, initial_state=1):
         x = current_state / N
         prob = x*(1+s) / (1+x*s)
         n_trials = M
+        #nb_mutants_after_update = np.random.binomial(n_trials, prob)
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
-
-        # update nb of mutants in the node
+        #nb_mutants_after_update = binom.rvs(n_trials, prob)   #does not work with numba
         
         if M==1: #Moran case
             rand = np.random.rand()
