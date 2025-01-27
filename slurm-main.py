@@ -15,11 +15,13 @@ sim_types = ['star', 'cycle', 'clique', 'line', 'wm_sim']
 
 all_types = ['star', 'cycle', 'clique', 'line', 'wm_sim', 'wm_mat']
 
+STORE_FIXATION_TIMES = False
+
 if __name__ == "__main__":
-    prefix = 'expA'
-    results_dir = 'results/expA/'
+    prefix = 'simB'
+    results_dir = 'results/simB/'
     tmax = 1000000
-    num = 10
+    num = 50
     initial_node = 0    # will be changed if type == 'star'
 
     type = sys.argv[1]
@@ -95,29 +97,43 @@ if __name__ == "__main__":
             DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
 
 
-
-        output = {
-            'parameters': parameters,
-            's_range': list(s_range),
-            'nb_fixations': list(fixation_counts),
-            'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
-            'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
-            'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
-        }
+        if STORE_FIXATION_TIMES:
+            output = {
+                'parameters': parameters,
+                's_range': list(s_range),
+                'nb_fixations': list(fixation_counts),
+                'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
+                'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
+                'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
+            }
+        else:
+            output = {
+                'parameters': parameters,
+                's_range': list(s_range),
+                'nb_fixations': list(fixation_counts)
+            }
 
     elif type == 'wm_sim':
         initial_state = 1
         s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_wm_sim(
             N, M, log_s_min, log_s_max, initial_state, nb_trajectories, tmax, num)
 
-        output = {
-            'parameters': parameters,
-            's_range': list(s_range),
-            'nb_fixations': list(fixation_counts),
-            'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
-            'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
-            'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
-        }
+        if STORE_FIXATION_TIMES:
+            output = {
+                'parameters': parameters,
+                's_range': list(s_range),
+                'nb_fixations': list(fixation_counts),
+                'all_extinction_times': list([[all_extinction_times[i,j] for i in range(num)] for j in range(nb_trajectories)]) ,
+                'all_fixation_times': list([[all_fixation_times[i,j] for i in range(num)] for j in range(nb_trajectories)]),
+                'all_fixation_bools': list([[all_fixation_bools[i,j] for i in range(num)] for j in range(nb_trajectories)])
+            }
+        else:
+            output = {
+                'parameters': parameters,
+                's_range': list(s_range),
+                'nb_fixations': list(fixation_counts)
+            }
+
 
     elif type == 'wm_mat':
         s_range, fixation_probabilities = sweep_s_wm_mat(N, M, log_s_min, log_s_max, num)

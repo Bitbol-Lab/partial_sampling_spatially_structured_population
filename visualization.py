@@ -155,7 +155,37 @@ def expA(min_job_number: int, max_job_number: int, results_dir : str= 'results/e
 
 
 
+def time_histograms(results_dir, prefix, type, job_number):
+    n_bins = 20
     
+    data = recover_data(prefix, type, results_dir, job_number)
+    s_range = np.array(data['s_range'])
+    num = len(s_range)
+    nb_trajectories = data['parameters']['nb_trajectories']
+    s_index = num-1
+    
+    all_fixation_bools = np.array(data['all_fixation_bools'])[:, s_index]
+    all_extinction_times = np.array(data['all_extinction_times'])[:, s_index]
+    all_fixation_times = np.array(data['all_fixation_times'])[:, s_index]
+
+    extinction_times = all_extinction_times[all_fixation_bools == 0.]
+    print(extinction_times)
+    fixation_times = all_fixation_times[all_fixation_bools == 1.]
+    print(fixation_times)
+    fig, axs = plt.subplots(1, 2, sharey=False, tight_layout=True)
+
+    # We can set the number of bins with the *bins* keyword argument.
+    dist1 = extinction_times
+    dist2 = fixation_times
+    print(dist1)
+    print(dist2)
+    axs[0].hist(dist1, bins=n_bins)
+
+    axs[1].hist(dist2, bins=n_bins)
+
+    plt.savefig('histogram_test')
+    
+
 
     
         
@@ -166,4 +196,5 @@ def expA(min_job_number: int, max_job_number: int, results_dir : str= 'results/e
 if __name__ == '__main__':
     #compare_WM_mat(1)
     #WM_paper(1, 5, 'results/WM_paper/')
-    expA(1, 5, 'results/expA/')
+    #expA(1, 5, 'results/expA/')
+    time_histograms('results/expA_100runs/', 'expA', 'line',3)
