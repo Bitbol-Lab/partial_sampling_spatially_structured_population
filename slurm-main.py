@@ -111,7 +111,7 @@ if __name__ == "__main__":
         #all_fixation_bools_nodes = np.zeros((nb_demes, num, nb_trajectories))
 
         for node in range(nb_demes):
-            s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
+            s_range, fixation_counts,  all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
             DG, nb_demes, N, M, log_s_min, log_s_max, node, nb_trajectories, tmax, num)
             nb_fixations_nodes[node,:] = fixation_counts[:]
             #all_extinction_times_nodes[node,:,:] = all_extinction_times[:,:]

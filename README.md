@@ -6,6 +6,8 @@ Repository for my lab immersion on spatially structured populations with partial
 
 ### slurm-main.py
 
+>In that case, it is not possible to store the fixation/extinction times. (use run_single.py instead)
+
 `py slurm-main.py [type] [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha) (initial node)`
 
 The arguments in parentheses depend on the chosen type:
@@ -18,7 +20,7 @@ The arguments in parentheses depend on the chosen type:
 
 - For line graphs: `py slurm-main.py line [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories] (migration_rate) (nb_demes) (alpha) (initial node)`
 
-> You can choose to have the averaged fixation probability over the possible initial nodes if `initial node = 'avg'`. In that case, it is not possible to store the fixation/extinction times.
+> You can choose to have the averaged fixation probability over the possible initial nodes if `initial node = 'avg'`. 
 
 - For well-mixed simulations: `py slurm-main.py wm_sim [job_array_nb] [N] [M] [log_s_min] [log_s_max] [nb_trajectories]`
 

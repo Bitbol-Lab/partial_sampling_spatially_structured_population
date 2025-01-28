@@ -9,27 +9,18 @@ from utils.graph_generation import generate_clique_graph, generate_cycle_graph, 
 from utils.wm_sim import simulate_multiple_trajectories
 from utils.wm_mat import compute_fixation_probability
 
+STORE_FIXATION_TIMES = True
+
+tmax = 1000000
+
+
 graph_types = ['star', 'cycle', 'clique', 'line']
 
 sim_types = ['star', 'cycle', 'clique', 'line', 'wm_sim']
 
 all_types = ['star', 'cycle', 'clique', 'line', 'wm_sim', 'wm_mat']
 
-STORE_FIXATION_TIMES = False
-
-if __name__ == "__main__":
-    prefix = 'A'
-    results_dir = 'results/singletest/'
-    tmax = 1000000
-    initial_node = 0    # will be changed if type == 'star'
-
-    type = sys.argv[1]
-
-    job_array_nb = int(sys.argv[2])
-    N = int(sys.argv[3])
-    M = int(sys.argv[4])
-    s = float(sys.argv[5])
-
+def run_single(prefix, results_dir, type, job_array_nb, N,M,s, nb_trajectories=100, migration_rate=0, nb_demes=1, alpha=1, initial_node=0):
     parameters = {
             'type': type,
             'job_array_nb':job_array_nb,
@@ -39,14 +30,11 @@ if __name__ == "__main__":
     }
 
     if type in sim_types:
-        nb_trajectories = int(sys.argv[6])
         parameters['nb_trajectories'] = nb_trajectories
 
     ##### Parameters for each type of simulation
 
     if type == 'clique':
-        migration_rate = float(sys.argv[7])
-        nb_demes = int(sys.argv[8])
 
         DG = generate_clique_graph(nb_demes, migration_rate)
 
@@ -54,9 +42,7 @@ if __name__ == "__main__":
         parameters['nb_demes'] = nb_demes
 
     elif type == 'cycle':
-        migration_rate = float(sys.argv[7])
-        nb_demes = int(sys.argv[8])
-        alpha = float(sys.argv[9])
+        
 
         DG = generate_cycle_graph(nb_demes, migration_rate, alpha)
 
@@ -65,10 +51,6 @@ if __name__ == "__main__":
         parameters['alpha'] = alpha
 
     elif type == 'star' or type == 'line':
-        migration_rate = float(sys.argv[7])
-        nb_demes = int(sys.argv[8])
-        alpha = float(sys.argv[9])
-        initial_node = int(sys.argv[10])
 
         if type == 'star':
             DG = generate_star_graph(nb_demes, migration_rate, alpha)
@@ -90,7 +72,7 @@ if __name__ == "__main__":
     ### Simulations or computations for each type
 
     if type in graph_types:
-        count_fixation, fixation_seq, fixation_times, extinction_times = simulate_multiple_trajectories_graph(
+        count_fixation, fixation_seq, fixation_times, extinction_times, count_runs = simulate_multiple_trajectories_graph(
             DG, nb_demes, N, M, s, tmax, initial_node, nb_trajectories)
 
 
@@ -100,17 +82,19 @@ if __name__ == "__main__":
                 'nb_fixations': count_fixation,
                 'extinction_times': list(extinction_times) ,
                 'fixation_times': list(fixation_times),
-                'fixation_seq': list(fixation_seq)
+                'fixation_seq': list(fixation_seq),
+                'count_runs': count_runs
             }
         else:
             output = {
                 'parameters': parameters,
-                'nb_fixations': count_fixation
+                'nb_fixations': count_fixation,
+                'count_runs': count_runs
             }
 
     elif type == 'wm_sim':
         initial_state = 1
-        count_fixation, fixation_seq, fixation_times, extinction_times = simulate_multiple_trajectories(
+        count_fixation, fixation_seq, fixation_times, extinction_times, count_runs = simulate_multiple_trajectories(
             N, M, s, tmax, nb_trajectories, initial_state=1)
         
         if STORE_FIXATION_TIMES:
@@ -119,12 +103,14 @@ if __name__ == "__main__":
                 'nb_fixations': count_fixation,
                 'extinction_times': list(extinction_times) ,
                 'fixation_times': list(fixation_times),
-                'fixation_seq': list(fixation_seq)
+                'fixation_seq': list(fixation_seq),
+                'count_runs': count_runs
             }
         else:
             output = {
                 'parameters': parameters,
-                'nb_fixations': count_fixation
+                'nb_fixations': count_fixation,
+                'count_runs': count_runs
             }
 
 
@@ -157,3 +143,48 @@ if __name__ == "__main__":
 
     with open(filename, "w") as outfile:
         json.dump(output, outfile, indent=4)
+
+
+
+if __name__ == "__main__":
+    prefix = 'A'
+    results_dir = 'results/singletest/'
+    initial_node = 0    # will be changed if type == 'star'
+
+    type = sys.argv[1]
+
+    job_array_nb = int(sys.argv[2])
+    N = int(sys.argv[3])
+    M = int(sys.argv[4])
+    s = float(sys.argv[5])
+
+    if type=='wm_mat':
+        run_single(prefix, results_dir, type, job_array_nb, N, M, s)
+    
+    if type=='wm_sim':
+        nb_trajectories = int(sys.argv[6])
+        run_single(prefix, results_dir, type, job_array_nb, N, M, s, nb_trajectories)
+
+    if type == 'clique':
+        nb_trajectories = int(sys.argv[6])
+        migration_rate = float(sys.argv[7])
+        nb_demes = int(sys.argv[8])
+        run_single(prefix, results_dir, type, job_array_nb, N, M, s, nb_trajectories, migration_rate, nb_demes)
+    
+    if type == 'cycle':
+        nb_trajectories = int(sys.argv[6])
+        migration_rate = float(sys.argv[7])
+        nb_demes = int(sys.argv[8])
+        alpha = float(sys.argv[9])
+        run_single(prefix, results_dir, type, job_array_nb, N, M, s, nb_trajectories, migration_rate, nb_demes, alpha)
+    
+    elif type == 'star' or type == 'line':
+        nb_trajectories = int(sys.argv[6])
+        migration_rate = float(sys.argv[7])
+        nb_demes = int(sys.argv[8])
+        alpha = float(sys.argv[9])
+        initial_node = int(sys.argv[10])
+        run_single(prefix, results_dir, type, job_array_nb, N, M, s, nb_trajectories, migration_rate, nb_demes, alpha, initial_node)    
+
+
+    

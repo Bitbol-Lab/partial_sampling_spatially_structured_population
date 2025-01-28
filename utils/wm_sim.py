@@ -32,6 +32,9 @@ def simulate_trajectory(N, M, s, tmax, initial_state=1):
         # perform binomial sampling 
         x = current_state / N
         prob = x*(1+s) / (1+x*s)
+        if prob >1 or prob <0:
+                print('prob',prob)
+                print('s',s)
         n_trials = M
         #nb_mutants_after_update = np.random.binomial(n_trials, prob)
         nb_mutants_after_update = np.random.binomial(n_trials, prob)
@@ -79,6 +82,7 @@ def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_s
      -> fixation_seq: ndArray(nb_trajectories), fixation_seq[i] = 1 if a fixation was observed at trajectory i, 0 otherwise
      -> fixation_times: ndArray(nb_trajectories), fixation_times[i] is the number of iterations before fixation (if it was observed) at trajectory i (0 otherwise)
      -> extinction_times: ndArray(nb_trajectories), extinction_times[i] is the number of iterations before extinction (if it was observed) at trajectory i (0 otherwise)
+     -> count_runs: int, number of runs (debug, should be equal to nb_trajectories)
     """
     #all_trajectories = np.zeros((int(nb_trajectories),int(tmax)))
     #all_trajectories[:,0] = initial_state
@@ -87,6 +91,7 @@ def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_s
 
     fixation_seq = np.zeros(nb_trajectories)
     count_fixation = 0
+    count_runs = 0
     fixation_times = np.zeros(nb_trajectories)
     extinction_times = np.zeros(nb_trajectories)
 
@@ -106,10 +111,11 @@ def simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories=100, initial_s
             extinction_times[trajectory_index] = np.inf
         else:
             extinction_times[trajectory_index] = stop_time
-            fixation_times[trajectory_index] = np.inf        
+            fixation_times[trajectory_index] = np.inf
+        count_runs += 1        
         
 
-    return count_fixation, fixation_seq, fixation_times, extinction_times
+    return count_fixation, fixation_seq, fixation_times, extinction_times, count_runs
 
 
 
@@ -143,8 +149,14 @@ def sweep_s_wm_sim(N, M, log_s_min, log_s_max, initial_state = 1, nb_trajectorie
     
 
     for i,s in enumerate(s_range):
-        count_fixation, fixation_seq, fixation_times, extinction_times = simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories, initial_state)
-        fixation_counts[i] = count_fixation
+        count_fixation, fixation_seq, fixation_times, extinction_times, count_runs = simulate_multiple_trajectories(N, M, s, tmax, nb_trajectories, initial_state)
+        if count_runs != nb_trajectories:
+            print('missed runs')
+            print('counted runs', count_runs)
+            print('nb_trajectories', nb_trajectories)
+            fixation_counts[i] = count_fixation * nb_trajectories / count_runs
+        else:
+            fixation_counts[i] = count_fixation
         all_fixation_times[i,:] = fixation_times[:]
         all_extinction_times[i,:] = extinction_times[:]
         all_fixation_bools[i,:] = fixation_seq[:]

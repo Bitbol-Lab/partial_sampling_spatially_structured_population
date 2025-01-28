@@ -52,7 +52,13 @@ def simulate_graph(DG, nb_demes, N, M, s, tmax, initial_node=0):
             # Binomial sampling
             x_tilde = sum([i_nodes_before[k] * DG[k, selected_node]/N for k in range(nb_demes)])
             #print('x_tilde:', x_tilde)
-            prob = max(min(x_tilde * (1 + s) / (1 + x_tilde * s), 1),0)  #clip probability to stay in [0,1]
+            prob = x_tilde * (1 + s) / (1 + x_tilde * s)
+            if x_tilde >1 or x_tilde<0 or prob<0 or prob >1:
+                print('x_tilde',x_tilde)
+                print('prob', prob)
+                print('sum m_kj, should be equal to one:', sum([DG[k, selected_node] for k in range(nb_demes)]))
+                print('s',s)
+            prob = max(min(prob, 1),0)  #clip probability to stay in [0,1]
             n_trials = M
             nb_mutants_after_update = np.random.binomial(n_trials, prob)
             #nb_mutants_after_update = binom.rvs(n_trials, prob)   #does not work with numba
@@ -99,10 +105,12 @@ def simulate_multiple_trajectories_graph(DG, nb_demes, N, M, s, tmax, initial_no
      -> fixation_seq: ndArray(nb_trajectories), fixation_seq[i] = 1 if a fixation was observed at trajectory i, 0 otherwise
      -> fixation_times: ndArray(nb_trajectories), fixation_times[i] is the number of iterations before fixation (if it was observed) at trajectory i (0 otherwise)
      -> extinction_times: ndArray(nb_trajectories), extinction_times[i] is the number of iterations before extinction (if it was observed) at trajectory i (0 otherwise)
+     -> count_runs: int, number of runs (debug, should be equal to nb_trajectories)
     """
     #all_trajectories = np.zeros((int(nb_trajectories), int(tmax)))
     fixation_seq = np.zeros(nb_trajectories)
     count_fixation = 0
+    count_runs = 0
     fixation_times = np.zeros(nb_trajectories)
     extinction_times = np.zeros(nb_trajectories)
 
@@ -119,10 +127,11 @@ def simulate_multiple_trajectories_graph(DG, nb_demes, N, M, s, tmax, initial_no
             extinction_times[trajectory_index] = stop_time
             fixation_times[trajectory_index] = np.inf
 
+        count_runs += 1
         #fixation_seq[trajectory_index] = fixation
         #all_trajectories[trajectory_index, :] = np.sum(trajectories, axis=1)
 
-    return count_fixation, fixation_seq, fixation_times, extinction_times
+    return count_fixation, fixation_seq, fixation_times, extinction_times, count_runs
 
 
 
@@ -143,6 +152,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
     Returns:
      -> s_range: np.logspace(log_s_min, log_s_max, num=num), interval of s values
      -> fixation_counts: ndArray(num), fixation_counts[i] is the number of fixation counted for s = s_range[i]
+     -> run_counts: ndArray(num), fixation_counts[i] is the number of runs counted for s = s_range[i]
      -> all_fixation_times: ndArray(num, nb_trajectories), all_fixation_times[s_index, traj_index] is the fixation time (if it was observed) at trajectory [traj_index] for s = s_range[s_index] (0 otherwise)
      -> all_extinction_times: ndArray(num, nb_trajectories), all_extinction_times[s_index, traj_index] is the extinction time (if it was observed) at trajectory [traj_index] for s = s_range[s_index] (0 otherwise)
      -> all_extinction_bools: ndArray(num, nb_trajectories), all_extinction_bools[s_index, traj_index] is 1 if fixation happened 0 otherwise
@@ -151,6 +161,7 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
     tmax = 100000
 
     fixation_counts = np.zeros_like(s_range)
+    run_counts = np.zeros_like(s_range)
     all_extinction_times = np.zeros((num, nb_trajectories))
     all_fixation_times = np.zeros((num, nb_trajectories))
     all_fixation_bools = np.zeros((num, nb_trajectories))
@@ -158,8 +169,17 @@ def sweep_s_graph(DG, nb_demes, N, M, log_s_min, log_s_max, initial_node = 0, nb
     
 
     for i,s in enumerate(s_range):
-        count_fixation, fixation_seq, fixation_times, extinction_times = simulate_multiple_trajectories_graph(DG, nb_demes, N, M, s, tmax, initial_node, nb_trajectories)
+        count_fixation, fixation_seq, fixation_times, extinction_times, count_runs = simulate_multiple_trajectories_graph(DG, nb_demes, N, M, s, tmax, initial_node, nb_trajectories)
         fixation_counts[i] = count_fixation
+        
+        if count_runs != nb_trajectories:
+            print('missed runs')
+            print('counted runs', count_runs)
+            print('nb_trajectories', nb_trajectories)
+            fixation_counts[i] = count_fixation * nb_trajectories / count_runs
+        else:
+            fixation_counts[i] = count_fixation
+        
         all_fixation_times[i,:] = fixation_times[:]
         all_extinction_times[i,:] = extinction_times[:]
         all_fixation_bools[i,:] = fixation_seq[:]
