@@ -10,11 +10,13 @@ import json
 
 import os
 
-from utils.misc import phi
+from utils.misc import phi, compute_avg_extinction_time, compute_avg_fixation_time
 
 
 
 # variables
+
+SHOW_THEORETICAL_MEANS = False
 
 clean_type = {
         'wm_sim': 'Well-mixed',
@@ -213,7 +215,6 @@ def time_histograms(results_dir, prefix, type, job_number):
     
     data = recover_data(prefix + '_single', type, results_dir, job_number)
     metadata = data['parameters'].copy()
-    nb_trajectories = data['parameters']['nb_trajectories']
     
     fixation_seq = np.array(data['fixation_seq'])
     extinction_times = np.array(data['extinction_times'])
@@ -250,20 +251,38 @@ def time_histograms(results_dir, prefix, type, job_number):
                 textstr += '\n' + r'Initial node: ' + f'{metadata['initial_node']}'
 
     axs[0].hist(dist1, bins=n_bins, density=True)
-    axs[0].axvline(avg_extinction_time, color='k', linestyle='dashed', linewidth=1)
     axs[0].set_xlabel('Extinction time')
     axs[0].set_ylabel('Probability density')
 
 
     axs[1].hist(dist2, bins=n_bins, density=True)
     axs[1].set_xlabel('Fixation time')
-    axs[1].axvline(avg_fixation_time, color='k', linestyle='dashed', linewidth=1)
 
-    # Display the mean
-    axs[0].text(0.25, 0.5, f'Mean: {round(avg_extinction_time,1)}', transform=axs[0].transAxes, fontsize=10,
-        verticalalignment='top')
-    axs[1].text(0.25, 0.5, f'Mean: {round(avg_fixation_time,1)}', transform=axs[1].transAxes, fontsize=10,
-        verticalalignment='top')
+    
+    if type=='wm_sim'and SHOW_THEORETICAL_MEANS:
+        # Display the theoretical means
+        N = metadata['N']
+        M = metadata['M']
+        s = metadata['s']
+        avg_extinction_time_th = compute_avg_extinction_time(N, M, s)
+        avg_fixation_time_th = compute_avg_fixation_time(N,M,s)
+        axs[0].axvline(avg_extinction_time_th, color='g', linewidth=1)
+        axs[1].axvline(avg_fixation_time_th, color='g', linewidth=1)
+        axs[0].text(0.25, 0.5, f'Mean: {round(avg_extinction_time,1)}\nTheory: {round(avg_extinction_time_th,1)}', transform=axs[0].transAxes, fontsize=10,
+            verticalalignment='top')
+        axs[1].text(0.25, 0.5, f'Mean: {round(avg_fixation_time,1)}\nTheory: {round(avg_fixation_time_th,1)}', transform=axs[1].transAxes, fontsize=10,
+            verticalalignment='top')
+    else:
+        axs[0].text(0.25, 0.5, f'Mean: {round(avg_extinction_time,1)}', transform=axs[0].transAxes, fontsize=10,
+            verticalalignment='top')
+        axs[1].text(0.25, 0.5, f'Mean: {round(avg_fixation_time,1)}', transform=axs[1].transAxes, fontsize=10,
+            verticalalignment='top')
+
+    # Display the empirical means
+    axs[0].axvline(avg_extinction_time, color='k', linestyle='dashed', linewidth=1)
+    axs[1].axvline(avg_fixation_time, color='k', linestyle='dashed', linewidth=1)
+    # Display the means
+    
 
     # Display the parameters
     axs[1].text(0.5, 0.95, textstr, transform=axs[1].transAxes, fontsize=12,

@@ -12,10 +12,7 @@ from utils.wm_sim import sweep_s_wm_sim
 from utils.wm_mat import sweep_s_wm_mat
 from utils.misc import store_output
 
-prefix = 'simC'
-results_dir = 'results/simC/'
 tmax = 10000000
-num = 50
 
 graph_types = ['star', 'cycle', 'clique', 'line']
 
@@ -27,20 +24,7 @@ all_types = ['star', 'cycle', 'clique', 'line', 'wm_sim', 'wm_mat']
 
 STORE_FIXATION_TIMES = False
 
-
-
-if __name__ == "__main__":
-    
-    initial_node = 0    # will be changed if type == 'star'
-
-    type = sys.argv[1]
-
-    job_array_nb = int(sys.argv[2])
-    N = int(sys.argv[3])
-    M = int(sys.argv[4])
-    log_s_min = int(sys.argv[5])
-    log_s_max = int(sys.argv[6])
-
+def slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, log_s_max, nb_trajectories=100, migration_rate=0.001, nb_demes=1, alpha=1, initial_node=0):
     parameters = {
             'type': type,
             'job_array_nb':job_array_nb,
@@ -51,25 +35,17 @@ if __name__ == "__main__":
     }
 
     if type in sim_types:
-        nb_trajectories = int(sys.argv[7])
         parameters['nb_trajectories'] = nb_trajectories
 
     ##### Parameters for each type of simulation
 
     if type == 'clique':
-        migration_rate = float(sys.argv[8])
-        nb_demes = int(sys.argv[9])
-
         DG = generate_clique_graph(nb_demes, migration_rate)
 
         parameters['migration_rate'] = migration_rate
         parameters['nb_demes'] = nb_demes
 
     elif type == 'cycle':
-        migration_rate = float(sys.argv[8])
-        nb_demes = int(sys.argv[9])
-        alpha = float(sys.argv[10])
-
         DG = generate_cycle_graph(nb_demes, migration_rate, alpha)
 
         parameters['migration_rate'] = migration_rate
@@ -77,13 +53,6 @@ if __name__ == "__main__":
         parameters['alpha'] = alpha
 
     elif type == 'star' or type == 'line':
-        migration_rate = float(sys.argv[8])
-        nb_demes = int(sys.argv[9])
-        alpha = float(sys.argv[10])
-        initial_node = sys.argv[11]
-        if initial_node != 'avg': #simulation will be run with a specified initial node
-            initial_node = int(initial_node)
-
         if type == 'star':
             DG = generate_star_graph(nb_demes, migration_rate, alpha)
         else: ## for lines
@@ -94,8 +63,6 @@ if __name__ == "__main__":
         parameters['alpha'] = alpha
         parameters['initial_node'] = initial_node
     
-
-
 
 
     start_time = time.time()
@@ -190,3 +157,57 @@ if __name__ == "__main__":
 
     with open(filename, "w") as outfile:
         json.dump(output, outfile, indent=4)
+
+
+if __name__ == "__main__":
+    prefix = 'simC'
+    results_dir = 'results/simC/'
+    num = 50
+
+    
+
+    type = sys.argv[1]
+
+    job_array_nb = int(sys.argv[2])
+    N = int(sys.argv[3])
+    M = int(sys.argv[4])
+    log_s_min = int(sys.argv[5])
+    log_s_max = int(sys.argv[6])
+
+    if type=='wm_mat':
+        slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, log_s_max)
+
+    elif type == 'wm_sim':
+        nb_trajectories = int(sys.argv[7])
+        slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, log_s_max, nb_trajectories)
+    
+    elif type == 'clique':
+        nb_trajectories = int(sys.argv[7])
+        migration_rate = float(sys.argv[8])
+        nb_demes = int(sys.argv[9])
+        slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, log_s_max, nb_trajectories, migration_rate, nb_demes)
+    
+    elif type == 'cycle':
+        nb_trajectories = int(sys.argv[7])
+        migration_rate = float(sys.argv[8])
+        nb_demes = int(sys.argv[9])
+        alpha = float(sys.argv[10])
+        slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, log_s_max, nb_trajectories, migration_rate, nb_demes, alpha)
+    
+    if type == 'star' or type == 'line':
+        nb_trajectories = int(sys.argv[7])
+        migration_rate = float(sys.argv[8])
+        nb_demes = int(sys.argv[9])
+        alpha = float(sys.argv[10])
+        initial_node = sys.argv[11]
+        if initial_node != 'avg': #simulation will be run with a specified initial node
+            initial_node = int(initial_node)
+        slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, log_s_max, nb_trajectories, migration_rate, nb_demes, alpha, initial_node)
+
+  
+
+
+    
+
+
+    
