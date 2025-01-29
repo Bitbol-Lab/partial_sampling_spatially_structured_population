@@ -47,6 +47,7 @@ def simulate_graph(DG, nb_demes, N, M, s, tmax, initial_node=0):
             # Hypergeometrical sampling
             ngood = i_nodes_before[selected_node]
             nbad = N - ngood
+
             nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M)
 
             # Binomial sampling
