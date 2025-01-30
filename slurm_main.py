@@ -12,7 +12,7 @@ from utils.wm_sim import sweep_s_wm_sim
 from utils.wm_mat import sweep_s_wm_mat
 from utils.misc import store_output
 
-tmax = 10000000
+tmax = 1000000000
 
 graph_types = ['star', 'cycle', 'clique', 'line']
 
@@ -128,8 +128,12 @@ def slurm_main(prefix, results_dir, num, type, job_array_nb, N, M, log_s_min, lo
         }
 
     else:
+        if initial_node == 'avg':
+            initial_node_sweep = 0
+        else:
+            initial_node_sweep = initial_node
         s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools = sweep_s_graph(
-            DG, nb_demes, N, M, log_s_min, log_s_max, initial_node, nb_trajectories, tmax, num)
+            DG, nb_demes, N, M, log_s_min, log_s_max, initial_node_sweep, nb_trajectories, tmax, num)
 
         output = store_output(STORE_FIXATION_TIMES, parameters, s_range, fixation_counts, all_extinction_times, all_fixation_times, all_fixation_bools)
 

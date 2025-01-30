@@ -39,8 +39,9 @@ def simulate_graph(DG, nb_demes, N, M, s, tmax, initial_node=0):
     #trajectories = np.zeros((tmax, nb_demes))
     #trajectories[0, :] = i_nodes
 
-    while t < tmax and b:
-        # Choose a random node
+    #while t < tmax and b:
+    while b:
+
         i_nodes_before = i_nodes[::]
         for selected_node in range(nb_demes):
 
@@ -51,14 +52,15 @@ def simulate_graph(DG, nb_demes, N, M, s, tmax, initial_node=0):
             nb_mutants_before_update = np.random.hypergeometric(ngood, nbad, M)
 
             # Binomial sampling
-            x_tilde = sum([i_nodes_before[k] * DG[k, selected_node]/N for k in range(nb_demes)])
+            x_tilde = sum([DG[k, selected_node]* (i_nodes_before[k] /N) for k in range(nb_demes)])
             #print('x_tilde:', x_tilde)
-            prob = x_tilde * (1 + s) / (1 + x_tilde * s)
-            if x_tilde >1 or x_tilde<0 or prob<0 or prob >1:
+            prob =  x_tilde* (1+s) / (1 + s* x_tilde)
+
+            if x_tilde >1 or x_tilde<0 :
                 print('x_tilde',x_tilde)
-                print('prob', prob)
-                print('sum m_kj, should be equal to one:', sum([DG[k, selected_node] for k in range(nb_demes)]))
-                print('s',s)
+                #print('prob', prob)
+                #print('sum m_kj, should be equal to one:', sum([DG[k, selected_node] for k in range(nb_demes)]))
+                #print('s',s)
             prob = max(min(prob, 1),0)  #clip probability to stay in [0,1]
             n_trials = M
             nb_mutants_after_update = np.random.binomial(n_trials, prob)

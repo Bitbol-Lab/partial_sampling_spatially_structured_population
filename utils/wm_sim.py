@@ -25,7 +25,8 @@ def simulate_trajectory(N, M, s, tmax, initial_state=1):
     current_state = initial_state
     t=1
     b = True
-    while t<tmax and b:
+    #while t<tmax and b:
+    while b:
         #perform hypergeometrical sampling
         nb_mutants_before_update = np.random.hypergeometric(current_state, N - current_state, M)
 
@@ -35,6 +36,8 @@ def simulate_trajectory(N, M, s, tmax, initial_state=1):
         if prob >1 or prob <0:
                 print('prob',prob)
                 print('s',s)
+                prob = min(1, prob)
+                prob = max(prob,0)
         n_trials = M
         #nb_mutants_after_update = np.random.binomial(n_trials, prob)
         nb_mutants_after_update = np.random.binomial(n_trials, prob)

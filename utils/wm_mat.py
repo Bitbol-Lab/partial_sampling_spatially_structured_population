@@ -110,7 +110,7 @@ def sweep_s_wm_mat(N, M, log_s_min, log_s_max, num = 10):
      -> s_range: np.logspace(log_s_min, log_s_max, num=num), interval of s values
      -> fixation_probabilities: ndArray(num), fixation_probablilties[i] is the fixation probability for N, M, and s = s_range[i]
      """
-    s_range = np.logspace(log_s_min, log_s_max, num=10)
+    s_range = np.logspace(log_s_min, log_s_max, num)
 
     fixation_probabilities = np.zeros_like(s_range)
     
