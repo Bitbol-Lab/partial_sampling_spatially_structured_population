@@ -4,8 +4,6 @@ pandas
 
 matplotlib
 
-networkx
-
 tqdm
 
 numba
