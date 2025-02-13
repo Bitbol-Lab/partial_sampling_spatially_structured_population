@@ -5,6 +5,8 @@ Using the formalism from  ["Bridging Wright–Fisher and Moran models"](https://
 
 # Code overview
 
+**slurm_jobs** contains scripts for SCITAS clusters.
+
 **utils** contains the more elementary scripts:
 
 - `graph_generation.py`: creates the migration matrices based on the specified type and parameters
@@ -17,20 +19,20 @@ Using the formalism from  ["Bridging Wright–Fisher and Moran models"](https://
 
 - `wm_sim.py`: launches simulations in the well-mixed case
 
-`run_single.py` and `slurm_main.py` are used to generate and store simulation data (see part below on how to use them)
+`run_single.py` and `slurm_main.py` are used to generate and store simulation data (see part below on how to use them).
 
-`visualization.py` is used to produce plots
+`visualization.py` is used to produce plots.
 
-`run.ipynb` is a notebook using all the functions to launch simulations and produce plots (the last part is not functional)
+`run.ipynb` is a notebook using all the functions to launch simulations and produce plots (the last part is not functional).
 
 
 # Run simulations / computations
 
 ## slurm_main.py
 
-Runs multiple simulations / computations of the specified type, sweeping the fitness in `np.logspace(log_s_min, log_s_max, num)` and writes a .JSON file in the specified results directory
+Runs multiple simulations / computations of the specified type, sweeping the fitness in `np.logspace(log_s_min, log_s_max, num)` and writes a .JSON file in the specified results directory.
 
-You can run it as a script (which you must modify to specify `prefix`, `results_dir`, `num`; useful when you want to run them on SCITAS clusters) or as a function (see examples in `run.ipynb`)
+You can run it as a script (which you must modify to specify `prefix`, `results_dir`, `num`; useful when you want to run them on SCITAS clusters) or as a function (see examples in `run.ipynb`).
 
 >Make sure the results directory is created before running
 
